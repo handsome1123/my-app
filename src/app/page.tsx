@@ -5,6 +5,7 @@ export default function Home() {
     <main>
       {/* Categories Sidebar + Hero Section */}
       <div className="container mx-auto px-4 py-8 flex gap-8">
+
         {/* Categories */}
         <div className="hidden md:block w-64 space-y-4">
           <div className="flex items-center justify-between hover:text-red-500 cursor-pointer">
@@ -46,7 +47,9 @@ export default function Home() {
             />
           </div>
         </div>
+
       </div>
+      <hr />
 
       {/* Flash Sales Section */}
       <div className="container mx-auto px-4 py-12">
@@ -115,6 +118,48 @@ export default function Home() {
           ))}
         </div>
       </div>
+      <hr />
+
+      {/* Explore Our Porducts */}
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-5 h-10 bg-red-500 rounded-sm"></div>
+            <h2 className="text-2xl font-bold">Our Products</h2>
+          </div>
+        </div>
+
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Product Card */}
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+            <div key={item} className="group relative bg-gray-50 rounded-lg p-4">
+              <div className="relative aspect-square mb-4">
+                <span className="absolute top-2 left-2 bg-red-500 text-white text-sm px-2 py-1 rounded">-40%</span>
+                <img 
+                  src={`https://images.unsplash.com/photo-${1670000000000 + item}?auto=format&fit=crop&q=80&w=400`}
+                  alt="Product"
+                  className="w-full h-full object-cover rounded-lg"
+                />
+                <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button className="p-2 bg-white rounded-full hover:bg-gray-100">
+                    <Heart className="w-4 h-4" />
+                  </button>
+                  <button className="p-2 bg-white rounded-full hover:bg-gray-100">
+                    <Eye className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <h3 className="font-semibold mb-2">Product Name</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-red-500">$120</span>
+                <span className="text-gray-400 line-through">$160</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <hr />
 
       {/* New Arrivals Section */}
       <div className="container mx-auto px-4 py-12">
@@ -144,6 +189,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <hr />
 
       {/* Services Section */}
       <div className="container mx-auto px-4 py-12">
@@ -171,6 +217,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+
     </main>
   );
 }
