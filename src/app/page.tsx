@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, Heart, ChevronRight, ChevronLeft, Eye, Truck, Phone, ShieldCheck } from 'lucide-react';
+import { Heart, ChevronRight, ChevronLeft, Eye, Truck, Phone, ShieldCheck } from 'lucide-react';
 
 export default function Home() {
   return (
