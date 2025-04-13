@@ -1,12 +1,16 @@
 import { Inter } from 'next/font/google';
+import Image from "next/image";
 import { Search, ChevronRight, ShoppingCart, Heart, QrCode } from 'lucide-react';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Modern E-commerce Homepage Design',
+  title: 'SecondHand E-commerce',
   description: 'A beautiful and modern e-commerce homepage',
+  icons: {
+    icon: "/images/sh_logo.jpg", 
+  },
 };
 
 export default function RootLayout({
@@ -27,13 +31,19 @@ export default function RootLayout({
           {/* Header */}
           <header className="border-b">
             <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-              <h1 className="text-2xl font-bold">Exclusive</h1>
+              <a href="/">
+                <img
+                  src="/images/sh_logo.jpg"
+                  alt="Logo"
+                  className="h-15 w-auto"
+                />
+              </a>
 
               <nav className="hidden md:flex space-x-8">
-                <a href="#" className="hover:text-red-500">Home</a>
-                <a href="#" className="hover:text-red-500">Contact</a>
-                <a href="#" className="hover:text-red-500">About</a>
-                <a href="#" className="hover:text-red-500">Sign Up</a>
+                <a href="/" className="hover:text-red-500">Home</a>
+                <a href="/" className="hover:text-red-500">Contact</a>
+                <a href="/" className="hover:text-red-500">About</a>
+                <a href="/auth/register" className="hover:text-red-500">Sign Up</a>
               </nav>
 
               <div className="flex items-center space-x-6">
@@ -41,7 +51,7 @@ export default function RootLayout({
                   <input
                     type="text"
                     placeholder="What are you looking for?"
-                    className="bg-gray-100 rounded-md py-2 pl-4 pr-10 w-[200px]"
+                    className="bg-gray-100 rounded-md py-2 pl-4 pr-10 w-[300px]"
                   />
                   <Search className="absolute right-3 top-2.5 w-5 h-5 text-gray-500" />
                 </div>
@@ -54,11 +64,11 @@ export default function RootLayout({
           {children}
 
           {/* Footer */}
-          <footer className="bg-black text-white pt-16 pb-8">
+          <footer className="bg-black text-white pt-5 pb-5">
             <div className="container mx-auto px-4">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-12">
                 <div>
-                  <h3 className="text-xl font-bold mb-4">Exclusive</h3>
+                  <h3 className="text-xl font-bold mb-4">SecondHand.com</h3>
                   <p className="mb-4">Subscribe</p>
                   <p className="text-sm mb-4">Get 10% off your first order</p>
                   <div className="relative">

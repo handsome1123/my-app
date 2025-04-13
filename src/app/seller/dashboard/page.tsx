@@ -78,28 +78,6 @@ export default function AmazonSellerDashboard() {
 
   return (
     <div className="bg-gray-100 min-h-screen flex">
-      {/* Sidebar */}
-      <aside className="bg-gray-800 text-white w-64 py-6 px-3 flex flex-col">
-        <div className="mb-8">
-          <div className="flex items-center justify-center mb-2">
-            <FontAwesomeIcon icon={faUserCircle} className="text-3xl mr-2" />
-            <span className="text-lg font-semibold">RISENY</span>
-          </div>
-          <Link href="/dashboard" className="block py-2 px-4 rounded-md hover:bg-gray-700 font-semibold">
-            <FontAwesomeIcon icon={faChartBar} className="mr-2" />
-            Dashboard
-          </Link>
-          <Link href="/inventory" className="block py-2 px-4 rounded-md hover:bg-gray-700">Inventory</Link>
-          <Link href="/pricing" className="block py-2 px-4 rounded-md hover:bg-gray-700">Pricing</Link>
-          <Link href="/orders" className="block py-2 px-4 rounded-md hover:bg-gray-700">Orders</Link>
-          <Link href="/advertising" className="block py-2 px-4 rounded-md hover:bg-gray-700">Advertising</Link>
-          <Link href="/reports" className="block py-2 px-4 rounded-md hover:bg-gray-700">Reports</Link>
-          <Link href="/performance" className="block py-2 px-4 rounded-md hover:bg-gray-700">Performance</Link>
-          <Link href="/returns" className="block py-2 px-4 rounded-md hover:bg-gray-700">Manage Returns</Link>
-          <Link href="/settings" className="block py-2 px-4 rounded-md hover:bg-gray-700">Settings</Link>
-        </div>
-      </aside>
-
       {/* Main Content */}
       <div className="flex-1 p-6">
         {/* Header */}

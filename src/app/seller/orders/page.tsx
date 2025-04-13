@@ -146,43 +146,6 @@ export default function OrderDetailsPage() {
 
   return (
     <div className="bg-gray-100 min-h-screen flex">
-      {/* Left Sidebar (Similar to the image) */}
-      <aside className="bg-white w-64 py-6 px-3 shadow-md">
-        <div className="mb-8">
-          <Link href="/" className="block text-lg font-semibold text-gray-800 mb-4">
-            EYEAZY
-          </Link>
-          <div className="bg-green-100 text-green-700 rounded-md p-2 mb-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 rounded-full bg-green-400 flex items-center justify-center text-white text-xs">S</div>
-              <span className="text-sm font-medium">Simsay shop</span>
-            </div>
-            <Link href="#" className="text-green-500 hover:underline text-xs block mt-1">Switch shop</Link>
-          </div>
-          <Link href="/home" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">Home</Link>
-          <div className="mb-2">
-            <div className="block py-2 px-4 text-gray-900 font-semibold">Orders</div>
-            <Link href="/orders/all" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 text-sm">All Orders</Link>
-            <Link href="/orders/drafts" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 text-sm">Drafts</Link>
-            <Link href="/orders/archived" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 text-sm">Archived</Link>
-          </div>
-          <Link href="/customers" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">Customers</Link>
-          <Link href="/products" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">Products</Link>
-          <Link href="/analytics" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">Analytics</Link>
-          <Link href="/apps" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">Apps</Link>
-          <Link href="/settings" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">Settings</Link>
-        </div>
-        <div className="mt-auto p-3 border-t border-gray-200">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-            <div>
-              <p className="text-sm font-semibold text-gray-800">Cory Chandler</p>
-              <p className="text-gray-500 text-xs">Owner</p>
-            </div>
-          </div>
-        </div>
-      </aside>
-
       {/* Main Content */}
       <div className="flex-1 p-6">
         {/* Header */}

@@ -7,46 +7,6 @@ import { faArrowLeft, faCamera, faTrash, faPlus, faCalendarAlt } from '@fortawes
 export default function AddNewProduct() {
   return (
     <div className="bg-gray-100 min-h-screen flex">
-      {/* Left Sidebar (Simplified for brevity) */}
-      <aside className="bg-white w-64 py-6 px-3 shadow-md">
-        <Link href="/" className="block text-lg font-semibold text-gray-800 mb-6">
-          Conceals.
-        </Link>
-        <nav>
-          <Link href="/overview" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            Overview
-          </Link>
-          <div>
-            <div className="block py-2 px-4 text-gray-900 font-semibold">Management</div>
-            <Link href="/management/member" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 text-sm">Member</Link>
-            <Link href="/management/product-list" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 text-sm bg-gray-100">
-              Product List
-            </Link>
-            <Link href="/management/partner-list" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 text-sm">Partner List</Link>
-          </div>
-          <Link href="/analytics" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            Analytics <span className="bg-gray-200 text-gray-700 rounded-full px-2 py-px text-xs ml-1">12</span>
-          </Link>
-          <Link href="/accounting" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            Accounting
-          </Link>
-          <Link href="/reports" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            Reports
-          </Link>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <Link href="/settings" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-              Settings
-            </Link>
-            <Link href="/notifications" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-              Notifications <span className="bg-blue-200 text-blue-700 rounded-full px-2 py-px text-xs ml-1">29</span>
-            </Link>
-            <Link href="/get-help" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-              Get Help
-            </Link>
-          </div>
-        </nav>
-      </aside>
-
       {/* Main Content */}
       <div className="flex-1 p-6">
         {/* Header */}

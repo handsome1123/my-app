@@ -54,31 +54,6 @@ export default function SellerPayouts() {
 
   return (
     <div className="bg-gray-100 min-h-screen flex">
-      {/* Left Sidebar (Simplified for brevity) */}
-      <aside className="bg-white w-64 py-6 px-3 shadow-md">
-        <Link href="/" className="block text-lg font-semibold text-gray-800 mb-6">
-          Seller Panel
-        </Link>
-        <nav>
-          <Link href="/dashboard" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            Dashboard
-          </Link>
-          <Link href="/products" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            Products
-          </Link>
-          <Link href="/orders" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            Orders
-          </Link>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="block py-2 px-4 text-blue-700 font-semibold bg-blue-100 rounded-md">
-              <FontAwesomeIcon icon={faMoneyBillWave} className="mr-2" />
-              Payouts & Transactions
-            </div>
-            {/* Add sub-navigation if needed */}
-          </div>
-          {/* Add other navigation links */}
-        </nav>
-      </aside>
 
       {/* Main Content */}
       <div className="flex-1 p-6">

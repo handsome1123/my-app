@@ -116,36 +116,6 @@ export default function ProductList() {
 
   return (
     <div className="bg-gray-100 min-h-screen flex">
-      {/* Left Sidebar (Simplified for brevity) */}
-      <aside className="bg-white w-64 py-6 px-3 shadow-md">
-        <Link href="/" className="block text-lg font-semibold text-gray-800 mb-6">
-          SalesTruck
-        </Link>
-        <nav>
-          <Link href="/dashboard" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            <FontAwesomeIcon icon={faBars} className="mr-2" />
-            Menu
-          </Link>
-          <Link href="/orders" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            Order <span className="bg-purple-200 text-purple-700 rounded-full px-2 py-px text-xs ml-1">10</span>
-          </Link>
-          <Link href="/customers" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            Customer
-          </Link>
-          <Link href="/message" className="block py-2 px-4 rounded-md hover:bg-gray-100 text-gray-700 font-medium">
-            Message
-          </Link>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="block py-2 px-4 text-purple-700 font-semibold bg-purple-100 rounded-md">
-              <FontAwesomeIcon icon={faGripHorizontal} className="mr-2" />
-              Product
-            </div>
-            {/* Add sub-navigation for Product if needed */}
-          </div>
-          {/* Add other navigation links as needed */}
-        </nav>
-      </aside>
-
       {/* Main Content */}
       <div className="flex-1 p-6">
         {/* Header */}
