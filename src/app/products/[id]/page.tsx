@@ -1,56 +1,59 @@
-// app/products/[id]/page.tsx
 "use client";
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  seller: string;
-  imageUrl: string;
-  location: string;
-  pickupDate: string;
-}
+import { products } from "@/data/products";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
-  const [product, setProduct] = useState<Product | null>(null);
+  const numericId = Number(id);
+  const [product, setProduct] = useState(() => {
+    return products.find((p) => p.id === numericId) || null;
+  });
 
   useEffect(() => {
-    async function fetchProduct() {
-      // Replace with actual API call
-      const res = await fetch(`/api/products/${id}`);
-      const data = await res.json();
-      setProduct(data);
-    }
-    if (id) fetchProduct();
-  }, [id]);
+    const foundProduct = products.find((p) => p.id === numericId);
+    setProduct(foundProduct || null);
+  }, [numericId]);
 
-  if (!product) return <div className="p-6">Loading...</div>;
+  if (!product) return <div className="p-6 text-center">Product not found.</div>;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="grid md:grid-cols-2 gap-6">
-        <Image
-          src={product.imageUrl}
-          alt={product.name}
-          width={500}
-          height={500}
-          className="rounded shadow"
-        />
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-          <p className="text-gray-700 mb-4">{product.description}</p>
-          <p className="text-xl font-semibold text-blue-600 mb-2">${product.price}</p>
-          <p className="text-sm text-gray-500 mb-2">Category: {product.category}</p>
-          <p className="text-sm text-gray-500 mb-2">Sold by: {product.seller}</p>
-          <p className="text-sm text-gray-500 mb-2">Delivery location: {product.location}</p>
-          <p className="text-sm text-gray-500 mb-4">Pickup date: {product.pickupDate}</p>
-          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add to Cart</button>
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+      <Link href="/products" className="text-blue-600 hover:underline mb-4 inline-block">
+        &larr; Back to Products
+      </Link>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <div className="relative w-full aspect-square">
+          <Image
+            src={product.imageUrl}
+            alt={product.name}
+            width={400}
+            height={400}
+            className="rounded-lg object-cover shadow-md"
+          />
+        </div>
+
+        <div className="space-y-4">
+          <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
+          <p className="text-gray-700 text-lg">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+
+          <div className="text-2xl font-semibold text-green-600">
+            ${product.price.toLocaleString()}
+          </div>
+
+          <div className="text-sm text-gray-600 space-y-1">
+            <p>Category: <span className="font-medium">{product.category ?? "General"}</span></p>
+            <p>Seller: <span className="font-medium">{product.seller ?? "Unknown"}</span></p>
+            <p>Pickup Location: <span className="font-medium">MFU Canteen</span></p>
+            <p>Pickup Date: <span className="font-medium">{new Date().toLocaleDateString()}</span></p>
+          </div>
+
+          <button className="mt-4 bg-blue-600 text-white text-lg px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+            Add to Cart
+          </button>
         </div>
       </div>
     </div>

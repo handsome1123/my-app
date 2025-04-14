@@ -23,13 +23,13 @@ export default function RootLayout({
       <body className={inter.className}>
         <div className="min-h-screen bg-white">
           {/* Top Banner */}
-          <div className="bg-black text-white py-2 px-4 text-center text-sm">
+          <div className="bg-gray-900 text-white py-2 px-4 text-center text-sm">
             Summer Sale For All Swim Suits And Free Express Delivery - OFF 50%!
             <a href="#" className="ml-2 underline">ShopNow</a>
           </div>
 
           {/* Header */}
-          <header className="border-b">
+          <header>
             <div className="container mx-auto px-4 py-4 flex items-center justify-between">
               <a href="/">
                 <img
@@ -51,7 +51,7 @@ export default function RootLayout({
                   <input
                     type="text"
                     placeholder="What are you looking for?"
-                    className="bg-gray-100 rounded-md py-2 pl-4 pr-10 w-[300px]"
+                    className="border rounded-md py-2 pl-4 pr-10 w-[300px]"
                   />
                   <Search className="absolute right-3 top-2.5 w-5 h-5 text-gray-500" />
                 </div>
@@ -64,7 +64,7 @@ export default function RootLayout({
           {children}
 
           {/* Footer */}
-          <footer className="bg-black text-white pt-5 pb-5">
+          <footer className="bg-gray-900 text-white pt-5 pb-2">
             <div className="container mx-auto px-4">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-12">
                 <div>
@@ -124,7 +124,7 @@ export default function RootLayout({
                   </ul>
                 </div>
               </div>
-              <div className="flex flex-col justify-center items-center pt-8 border-t border-gray-800">
+              <div className="flex flex-col justify-center items-center pt-2 border-t border-gray-800">
                 <p className="text-sm text-gray-400 text-center">© Copyright SecondHand 2025. All rights reserved</p>
               </div>
 
