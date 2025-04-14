@@ -1,4 +1,6 @@
 'use client';
+import { orders } from "@/data/orders";
+
 
 const OrderCard = ({ order }) => {
   const handleTrackOrder = () => {
@@ -65,49 +67,6 @@ const OrderCard = ({ order }) => {
 };
 
 export default function MyOrdersPage() {
-  // Dummy order data (replace with your actual data fetching)
-  const orders = [
-    {
-      orderId: '#R0374915036',
-      orderDate: 'Thu, 17th Nov \'16',
-      items: [
-        {
-          id: 1,
-          name: 'Netting Mykonos Tunic Dress',
-          designer: 'By Milly Thomas',
-          size: 'S',
-          quantity: 1,
-          price: 1250,
-          image: 'https://via.placeholder.com/80/D3D3D3/FFFFFF?Text=Dress1',
-          status: 'In-Transit',
-          deliveryDate: '24 December 2016',
-        },
-      ],
-      paymentLastDigits: '7343',
-      totalAmount: 1250,
-    },
-    {
-      orderId: '#R0374915037',
-      orderDate: 'Fri, 25th Nov \'16',
-      items: [
-        {
-          id: 2,
-          name: 'Embroidered Sequin Mini Dress',
-          designer: 'By Sonia Agrawal',
-          size: 'S',
-          quantity: 1,
-          price: 1760,
-          image: 'https://via.placeholder.com/80/696969/FFFFFF?Text=Dress2',
-          status: 'In-Transit',
-          deliveryDate: '24 December 2016',
-        },
-      ],
-      paymentLastDigits: '9876',
-      totalAmount: 1760,
-    },
-    // Add more order objects here
-  ];
-
   return (
     <div className="bg-gray-100 min-h-screen py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">

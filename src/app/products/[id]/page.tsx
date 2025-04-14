@@ -50,10 +50,9 @@ export default function ProductDetailPage() {
             <p>Pickup Location: <span className="font-medium">MFU Canteen</span></p>
             <p>Pickup Date: <span className="font-medium">{new Date().toLocaleDateString()}</span></p>
           </div>
-
-          <button className="mt-4 bg-blue-600 text-white text-lg px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+          <Link href="/buyer/orders" className="mt-4 bg-blue-600 text-white text-lg px-6 py-2 rounded-lg hover:bg-blue-700 transition">
             Add to Cart
-          </button>
+          </Link>
         </div>
       </div>
     </div>
