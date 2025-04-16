@@ -27,8 +27,8 @@ const LoggedInHeader = () => {
 
         <nav className="hidden md:flex space-x-8">
           <Link href="/buyer/home" className="hover:text-red-500">Home</Link>
-          <Link href="/contact" className="hover:text-red-500">Contact</Link>
-          <Link href="/about" className="hover:text-red-500">About</Link>
+          <Link href="/contact" className="hover:text-red-500">My order</Link>
+          <Link href="/about" className="hover:text-red-500">My whilst</Link>
         </nav>
 
         <div className="flex items-center space-x-6">
@@ -45,7 +45,7 @@ const LoggedInHeader = () => {
             {/* Optional: Wishlist count */}
             {/* <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">2</span> */}
           </Link>
-          <Link href="/cart" className="relative">
+          <Link href="/buyer/cart" className="relative">
             <ShoppingCart className="w-6 h-6 relative">
               <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">8</span>
             </ShoppingCart>
@@ -68,7 +68,7 @@ const LoggedInHeader = () => {
                     Manage My Account
                   </span>
                 </Link>
-                <Link href="/orders">
+                <Link href="/buyer/orders">
                   <span className="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100">
                     My Order
                   </span>

@@ -5,6 +5,7 @@ import { Search, Heart, ShoppingCart } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserCircle, faCaretDown } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
+import RegisterModal from '@/components/RegisterModal';
 
 const LoggedOutHeader = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -12,6 +13,9 @@ const LoggedOutHeader = () => {
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
+
+
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   return (
     <header>
@@ -28,7 +32,17 @@ const LoggedOutHeader = () => {
           <Link href="/" className="hover:text-red-500">Home</Link>
           <Link href="/contact" className="hover:text-red-500">Contact</Link>
           <Link href="/about" className="hover:text-red-500">About</Link>
-          <Link href="/auth/register" className="hover:text-red-500">Sign Up</Link>
+          {/* <Link href="/auth/register" className="hover:text-red-500">Sign Up</Link> */}
+          <button
+          onClick={() => setShowRegisterModal(true)}
+          className='hover:text-red-500'>
+            Sign Up
+          </button>
+          {
+            showRegisterModal && (
+              <RegisterModal onClose={() => setShowRegisterModal(false)}/>
+            )
+          }
         </nav>
 
         <div className="flex items-center space-x-6">
@@ -47,3 +61,6 @@ const LoggedOutHeader = () => {
 };
 
 export default LoggedOutHeader;
+
+
+

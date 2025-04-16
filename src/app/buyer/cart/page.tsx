@@ -45,7 +45,7 @@ export default function CartPage() {
                       <div className="h-10 w-10 flex-shrink-0">
                         <img
                           className="h-full w-full object-contain rounded"
-                          src="https://via.placeholder.com/80/0000FF/FFFFFF?Text=Monitor"
+                          src="/images/products/1.png"
                           alt="LCD Monitor"
                         />
                       </div>
@@ -86,7 +86,7 @@ export default function CartPage() {
                       <div className="h-10 w-10 flex-shrink-0">
                         <img
                           className="h-full w-full object-contain rounded"
-                          src="https://via.placeholder.com/80/FF0000/FFFFFF?Text=Gamepad"
+                          src="/images/products/2.png"
                           alt="HI Gamepad"
                         />
                       </div>
@@ -133,16 +133,6 @@ export default function CartPage() {
               >
                 Return To Shop
               </Link>
-            </div>
-            <div className="md:flex md:items-center">
-              <input
-                type="text"
-                placeholder="Coupon Code"
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md md:w-1/3 mr-2"
-              />
-              <button className="bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded focus:outline-none">
-                Apply Coupon
-              </button>
             </div>
             <div>
               <button className="bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded focus:outline-none hover:bg-gray-100">
