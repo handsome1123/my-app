@@ -28,38 +28,7 @@ export default function RootLayout({
             <a href="#" className="ml-2 underline">ShopNow</a>
           </div>
 
-          {/* Header */}
-          <header>
-            <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-              <a href="/">
-                <img
-                  src="/images/sh_logo.jpg"
-                  alt="Logo"
-                  className="h-15 w-auto"
-                />
-              </a>
 
-              <nav className="hidden md:flex space-x-8">
-                <a href="/" className="hover:text-red-500">Home</a>
-                <a href="/" className="hover:text-red-500">Contact</a>
-                <a href="/" className="hover:text-red-500">About</a>
-                <a href="/auth/register" className="hover:text-red-500">Sign Up</a>
-              </nav>
-
-              <div className="flex items-center space-x-6">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="What are you looking for?"
-                    className="border rounded-md py-2 pl-4 pr-10 w-[300px]"
-                  />
-                  <Search className="absolute right-3 top-2.5 w-5 h-5 text-gray-500" />
-                </div>
-                <Heart className="w-6 h-6" />
-                <ShoppingCart className="w-6 h-6" />
-              </div>
-            </div>
-          </header>
 
           {children}
 

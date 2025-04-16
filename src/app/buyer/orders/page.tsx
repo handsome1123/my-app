@@ -1,5 +1,7 @@
 'use client';
 import { orders } from "@/data/orders";
+import LoggedInHeader from "@/components/LoggedInHeader";
+
 
 
 const OrderCard = ({ order }) => {
@@ -68,21 +70,25 @@ const OrderCard = ({ order }) => {
 
 export default function MyOrdersPage() {
   return (
-    <div className="bg-gray-100 min-h-screen py-8">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-4">
-          <h1 className="text-xl font-semibold text-gray-900">My Orders</h1>
-          <p className="text-sm text-gray-500">
-            View and edit all your pending, delivered, and returned orders here.
-          </p>
-        </div>
+    <main>
+      {/* LoggedInHeader */}
+      <LoggedInHeader />
+      <div className="bg-gray-100 min-h-screen py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-4">
+            <h1 className="text-xl font-semibold text-gray-900">My Orders</h1>
+            <p className="text-sm text-gray-500">
+              View and edit all your pending, delivered, and returned orders here.
+            </p>
+          </div>
 
-        <div>
-          {orders.map((order) => (
-            <OrderCard key={order.orderId} order={order} />
-          ))}
+          <div>
+            {orders.map((order) => (
+              <OrderCard key={order.orderId} order={order} />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

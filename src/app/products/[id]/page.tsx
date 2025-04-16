@@ -1,5 +1,6 @@
 "use client";
 import { useParams } from "next/navigation";
+import { ShoppingCart, CreditCard } from 'lucide-react';
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -50,9 +51,15 @@ export default function ProductDetailPage() {
             <p>Pickup Location: <span className="font-medium">MFU Canteen</span></p>
             <p>Pickup Date: <span className="font-medium">{new Date().toLocaleDateString()}</span></p>
           </div>
-          <Link href="/buyer/orders" className="mt-4 bg-blue-600 text-white text-lg px-6 py-2 rounded-lg hover:bg-blue-700 transition">
-            Add to Cart
-          </Link>
+          <div className="mt-4 flex gap-4">
+            <Link
+              href="/buyer/orders"
+              className="flex items-center gap-2 bg-blue-600 text-white text-lg px-6 py-2 rounded-lg hover:bg-blue-700 transition shadow-md"
+            >
+              <CreditCard size={20} />
+              Buy Now
+            </Link>
+          </div>
         </div>
       </div>
     </div>

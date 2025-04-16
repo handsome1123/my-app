@@ -3,7 +3,8 @@ import { Heart, ChevronRight, ChevronLeft, Eye, Truck, Phone, ShieldCheck } from
 import ImageCarousel from '@/components/ImageCarousel';
 import Link from "next/link";
 import { products } from "@/data/products";
-import LoggedOutHeader from "@/components/LoggedOutHeader";
+import LoggedInHeader from "@/components/LoggedInHeader";
+
 
 
 const heroImages = [
@@ -18,9 +19,9 @@ const heroImages = [
 export default function Home() {
   return (
     <main>
-      <div>
-      <LoggedOutHeader/>
-      </div>
+      {/* LoggedInHeader */}
+      <LoggedInHeader/>
+
       {/* Categories Sidebar + Hero Section */}
       <div className="container mx-auto px-4 py-4 flex gap-8">
 
@@ -62,7 +63,7 @@ export default function Home() {
         <div className="container mx-auto px-2 py-2">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.map((item) => (
-              <Link href="/auth/register">
+              <Link href={`/products/${item.id}`} key={item.id}>
                 <div className="group relative bg-gray-50 rounded-lg p-4 cursor-pointer hover:shadow-md transition">
                   <div className="relative aspect-square mb-4">
                     {/* Discount Badge */}
