@@ -2,8 +2,13 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import LoginModal from '@/components/LoginModal';
+import { useState } from "react";
 
 export default function Register() {
+
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   return (
     <main className="bg-gray-100 min-h-screen flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-lg flex flex-col lg:flex-row w-11/12 max-w-4xl overflow-hidden">
@@ -83,9 +88,11 @@ export default function Register() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{" "}
-              <Link href="/auth/login" className="text-blue-500 hover:underline">
-                Log in
-              </Link>
+              <button
+          onClick={() => setShowLoginModal(true)}
+          className='hover:text-red-500'>
+            Sign Up
+          </button>
             </p>
           </div>
         </div>

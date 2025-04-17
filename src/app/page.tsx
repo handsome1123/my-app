@@ -5,7 +5,6 @@ import Link from "next/link";
 import { products } from "@/data/products";
 import LoggedOutHeader from "@/components/LoggedOutHeader";
 
-
 const heroImages = [
   { src: '/images/carousel/1.png', alt: 'Slide 1' },
   { src: '/images/carousel/2.png', alt: 'Slide 2' },
@@ -13,7 +12,6 @@ const heroImages = [
   { src: '/images/carousel/4.png', alt: 'Slide 4' },
   { src: '/images/carousel/5.png', alt: 'Slide 5' },
 ]
-
 
 export default function Home() {
   return (
