@@ -15,6 +15,7 @@ const heroImages = [
 
 export default function Home() {
   return (
+    <>
     <main>
       <div>
       <LoggedOutHeader/>
@@ -42,7 +43,7 @@ export default function Home() {
         </div>
 
         {/* Hero Section */}
-        <ImageCarousel images={heroImages} />
+        <ImageCarousel key={0} images={heroImages} />
 
       </div>
 
@@ -170,5 +171,6 @@ export default function Home() {
       </div>
 
     </main>
+    </>
   );
 }

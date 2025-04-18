@@ -154,7 +154,7 @@ export default function CheckoutPage() {
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0">
                       <img
-                        src="https://via.placeholder.com/80/0000FF/FFFFFF?Text=Monitor"
+                        src="/images/products/1.png"
                         alt="LCD Monitor"
                         className="h-full w-full object-contain rounded"
                       />
@@ -169,7 +169,7 @@ export default function CheckoutPage() {
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0">
                       <img
-                        src="https://via.placeholder.com/80/FF0000/FFFFFF?Text=Gamepad"
+                        src="/images/products/2.png"
                         alt="HI Gamepad"
                         className="h-full w-full object-contain rounded"
                       />
@@ -211,12 +211,6 @@ export default function CheckoutPage() {
                     />
                     <label htmlFor="bank" className="ml-2 text-sm font-medium text-gray-700">
                       Bank
-                      <span className="ml-2 text-xs text-gray-500">
-                        <svg className="inline-block w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6z"></path><path d="M2 10h20"></path></svg>
-                        <svg className="inline-block w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.73 18.66a9 9 0 0 0-1.73-3.66L12 2l-8 13a9 9 0 0 0-1.73 3.66"></path><path d="M12 2v13"></path></svg>
-                        <svg className="inline-block w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.73 18.66a9 9 0 0 0-1.73-3.66L12 2l-8 13a9 9 0 0 0-1.73 3.66"></path><path d="M12 2v13"></path></svg>
-                        <svg className="inline-block w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.73 18.66a9 9 0 0 0-1.73-3.66L12 2l-8 13a9 9 0 0 0-1.73 3.66"></path><path d="M12 2v13"></path></svg>
-                      </span>
                     </label>
                   </div>
                   <div className="flex items-center">
@@ -231,20 +225,6 @@ export default function CheckoutPage() {
                       Cash on delivery
                     </label>
                   </div>
-                </div>
-              </div>
-
-              {/* Coupon Code */}
-              <div className="mb-4">
-                <div className="flex items-center">
-                  <input
-                    type="text"
-                    placeholder="Coupon Code"
-                    className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md mr-2"
-                  />
-                  <button className="bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded focus:outline-none">
-                    Apply Coupon
-                  </button>
                 </div>
               </div>
 
