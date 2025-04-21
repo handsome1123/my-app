@@ -15,12 +15,13 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(cuid())
+  id                String    @id @default(uuid())
+  name              String
   email             String    @unique
   password          String
-  name              String?
-  emailVerified     DateTime?
-  verificationToken String?
+  isVerified        Boolean   @default(false)
+  verificationToken String?   @unique
+  tokenExpiresAt    DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }

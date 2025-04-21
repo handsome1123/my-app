@@ -1,13 +1,18 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 interface Props {
   onClose: () => void;
   onSwitchToRegister: () => void;
+  message?: string;
 }
 
-export default function LoginModal({ onClose, onSwitchToRegister }: Props) {
+export default function LoginModal({
+  onClose,
+  onSwitchToRegister,
+  message,
+}: Props) {
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-white opacity-60 pointer-events-none" />
@@ -22,16 +27,36 @@ export default function LoginModal({ onClose, onSwitchToRegister }: Props) {
 
           <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">Log In to Your Account</h2>
 
+          {message && (
+            <div className="text-center text-green-500 mb-4">
+              <p>{message}</p>
+            </div>
+          )}
+
           <form className="space-y-4">
-            <input type="email" placeholder="Email or Phone Number" className="w-full border border-gray-300 rounded p-2" />
-            <input type="password" placeholder="Password" className="w-full border border-gray-300 rounded p-2" />
-            <button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+            <input
+              type="email"
+              placeholder="Email"
+              className="w-full border border-gray-300 rounded p-2"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              className="w-full border border-gray-300 rounded p-2"
+            />
+            <button
+              type="submit"
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+            >
               Log In
             </button>
           </form>
 
           <div className="mt-6">
-            <button type="button" className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition duration-300">
+            <button
+              type="button"
+              className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition duration-300"
+            >
               <img src="/images/google-icon.png" alt="Google" className="h-5 w-5" />
               Log in with Google
             </button>
@@ -39,11 +64,14 @@ export default function LoginModal({ onClose, onSwitchToRegister }: Props) {
 
           <div className="mt-4 text-center">
             <p className="text-gray-600 text-sm">
-              Don&apos;t have an account?{' '}
-              <button onClick={() => {
-                onClose();
-                onSwitchToRegister();
-              }} className="text-red-500 hover:underline">
+              Don&apos;t have an account?{" "}
+              <button
+                onClick={() => {
+                  onClose();
+                  onSwitchToRegister();
+                }}
+                className="text-red-500 hover:underline"
+              >
                 Sign Up
               </button>
             </p>
