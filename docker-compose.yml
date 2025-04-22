@@ -1,18 +1,32 @@
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: mysql-container
-    environment:
-      MYSQL_ROOT_PASSWORD: root_password # The password for the root user
-      MYSQL_DATABASE: your_database_name # The name of the database to create
-      MYSQL_USER: your_database_user # A new user for your application
-      MYSQL_PASSWORD: your_database_password # Password for the application user
-    ports:
-      - "3306:3306"  # Exposing MySQL port to the host machine
+  php:
+    image: php:8.2-apache
+    container_name: php-server
     volumes:
-      - mysql-data:/var/lib/mysql  # Persist MySQL data across container restarts
-
-volumes:
-  mysql-data:
+      - ./src:/var/www/html/
+    ports:
+      - "8080:80"
+  
+  mysql:
+    image: mysql:5.7
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpassword
+    ports:
+      - "3306:3306"
+  
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: my-phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: rootpassword
