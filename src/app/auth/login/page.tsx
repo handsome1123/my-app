@@ -15,7 +15,7 @@ export default function Register() {
               src="/images/login.jpg"
               alt="Shopping Illustration"
               fill
-              className="object-cover rounded-lg shadow-md"
+              className="object-cover rounded-lg shadow-lg"
             />
           </div>
         </div>
@@ -29,12 +29,11 @@ export default function Register() {
           <form className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-gray-700 text-sm font-semibold mb-2">
-                Email or Phone Number
+                Email 
               </label>
               <input
                 type="text"
                 id="email"
-                placeholder="you@example.com or 0812345678"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
               />
             </div>
@@ -46,7 +45,6 @@ export default function Register() {
               <input
                 type="password"
                 id="password"
-                placeholder="********"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
               />
             </div>

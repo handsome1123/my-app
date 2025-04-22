@@ -2,12 +2,36 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import LoginModal from '@/components/LoginModal';
-import { useState } from "react";
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Register() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const router = useRouter();
 
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      setMessage('Registration successful. Please check your email for the OTP.');
+      router.push('/auth/verify'); // Redirect to OTP verification page
+    } else {
+      setMessage(data.message);
+    }
+  };
+
 
   return (
     <main className="bg-gray-100 min-h-screen flex items-center justify-center">
@@ -20,12 +44,13 @@ export default function Register() {
               src="/images/login.jpg"
               alt="Shopping Illustration"
               fill
-              className="object-cover rounded-lg shadow-md"
+              className="object-cover rounded-lg shadow-lg"
             />
           </div>
         </div>
 
         {/* Form Section */}
+
         <div className="p-8 w-full lg:w-1/2">
           <h2 className="text-3xl font-bold text-gray-800 mb-2">Create an account</h2>
           <p className="text-gray-600 mb-6">Enter your details below</p>
@@ -38,19 +63,17 @@ export default function Register() {
               <input
                 type="text"
                 id="name"
-                placeholder="Your Name"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
               />
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email or Phone Number
+                Email
               </label>
               <input
-                type="text"
+                type="email"
                 id="email"
-                placeholder="your@email.com or 0812345678"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
               />
             </div>
@@ -62,7 +85,6 @@ export default function Register() {
               <input
                 type="password"
                 id="password"
-                placeholder="********"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
               />
             </div>
@@ -88,14 +110,11 @@ export default function Register() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{" "}
-              <button
-          onClick={() => setShowLoginModal(true)}
-          className='hover:text-red-500'>
-            Sign Up
-          </button>
+              <Link href="/auth/login" className="text-blue-500 hover:underline">Login</Link>
             </p>
           </div>
         </div>
+
       </div>
     </main>
   );

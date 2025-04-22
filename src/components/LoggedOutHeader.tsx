@@ -24,7 +24,9 @@ const LoggedOutHeader = () => {
           <Link href="/" className="hover:text-red-500">Home</Link>
           <Link href="/contact" className="hover:text-red-500">Contact</Link>
           <Link href="/about" className="hover:text-red-500">About</Link>
-          <button onClick={openRegister} className="hover:text-red-500">Sign Up</button>
+          <Link href="/auth/register" className="hover:text-red-500">Sign Up</Link>
+
+          {/* <button onClick={openRegister} className="hover:text-red-500">Sign Up</button> */}
         </nav>
 
         <div className="flex items-center space-x-6">
