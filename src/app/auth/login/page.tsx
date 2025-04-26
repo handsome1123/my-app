@@ -94,6 +94,7 @@ export default function LoginPage() {
                 Login
               </button>
           </form>
+          <a href="/auth/forget-password">Forgot password?</a>
 
           {error && <p style={{ color: 'red' }}>{error}</p>}
 
