@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import pool from '../mysqlConnection'; // Adjust the path as needed
+import pool from '@/lib/mysqlConnection'; // ✅ correct import
 
 export async function GET() {
   try {

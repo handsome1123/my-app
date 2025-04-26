@@ -1,22 +1,40 @@
 "use client";
 import { useParams } from "next/navigation";
-import { ShoppingCart, CreditCard } from 'lucide-react';
+import { ShoppingCart, CreditCard } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { products } from "@/data/products";
 import LoggedInHeader from "@/components/LoggedInHeader";
+
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  imageUrl: string;
+  category?: string;
+  seller?: string;
+  description?: string;
+};
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const numericId = Number(id);
-  const [product, setProduct] = useState(() => {
-    return products.find((p) => p.id === numericId) || null;
-  });
+  const [product, setProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    const foundProduct = products.find((p) => p.id === numericId);
-    setProduct(foundProduct || null);
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`/api/products/${numericId}`);
+        if (!response.ok) throw new Error("Product not found");
+        const data = await response.json();
+        setProduct(data.product);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        setProduct(null);
+      }
+    };
+
+    fetchProduct();
   }, [numericId]);
 
   if (!product) return <div className="p-6 text-center">Product not found.</div>;
@@ -43,7 +61,7 @@ export default function ProductDetailPage() {
 
           <div className="space-y-4">
             <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
-            <p className="text-gray-700 text-lg">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+            <p className="text-gray-700 text-lg">{product.description || "No description available."}</p>
 
             <div className="text-2xl font-semibold text-green-600">
               ${product.price.toLocaleString()}
@@ -57,12 +75,13 @@ export default function ProductDetailPage() {
             </div>
             <div className="mt-4 flex gap-4">
               <Link
-                href="/buyer/checkout"
+                href={`/buyer/checkout?id=${product.id}`}
                 className="flex items-center gap-2 bg-blue-600 text-white text-lg px-6 py-2 rounded-lg hover:bg-blue-700 transition shadow-md"
               >
                 <CreditCard size={20} />
                 Buy Now
               </Link>
+
             </div>
           </div>
         </div>

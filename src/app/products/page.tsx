@@ -1,7 +1,10 @@
 "use client";
+
 import Link from "next/link";
 import { Heart, ChevronRight, ChevronLeft, Eye, Truck, Phone, ShieldCheck } from 'lucide-react';
 import { products } from "@/data/products";
+
+import { useEffect, useState } from "react";
 
 interface Product {
   id: string;
@@ -13,6 +16,29 @@ interface Product {
 }
 
 export default function ProductsPage() {
+
+  const[products, setProducts] = useState<Product[]>([]);
+  const[loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try{
+        const res = await fetch('/api/products');
+        const result = await res.json();
+        setProducts(result.data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }finally{
+        setLoading(false);
+      }
+    }
+    fetchProduct();
+  }, []);
+
+  if(loading) {
+    return <p>Loading products...</p>
+  }
+
   return (
     <main>
       {/* Explore Our Porducts */}
@@ -46,6 +72,7 @@ export default function ProductsPage() {
                       className="w-full h-full object-cover rounded-lg"
                     />
 
+
                     {/* Action Buttons (Heart, Eye) */}
                     <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button className="p-2 bg-white rounded-full hover:bg-gray-100">
@@ -72,6 +99,7 @@ export default function ProductsPage() {
             ))}
           </div>
         </div>
+
       </div>
     </main>
   );
