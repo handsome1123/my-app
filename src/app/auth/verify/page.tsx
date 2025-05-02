@@ -43,7 +43,7 @@ export default function VerifyPage() {
       
       setSuccess('Email verified successfully! Redirecting to login...');
       setTimeout(() => {
-        router.push('/login');
+        router.push('/auth/login');
       }, 2000);
     } catch (err: any) {
       setError(err.message || 'Something went wrong');

@@ -1,8 +1,18 @@
+// src/app/api/logout/route.ts
+
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
-export async function POST() {
-  // If you use cookies/session, you would clear it here.
-  // For now, we just tell the client to remove localStorage manually.
+export async function POST(request: Request) {
+  try {
+    // Remove the 'authToken' cookie
+    const cookieStore = await cookies();
+    cookieStore.delete('authToken');
 
-  return NextResponse.json({ message: 'Logged out successfully' });
+    // Return a success message or redirect to the login page
+    return NextResponse.json({ message: 'Logout successful' }, { status: 200 });
+  } catch (error) {
+    console.error('Error during logout:', error);
+    return NextResponse.json({ message: 'Error during logout' }, { status: 500 });
+  }
 }

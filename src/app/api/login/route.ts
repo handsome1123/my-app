@@ -1,16 +1,26 @@
-// pages/api/login.ts or app/api/login/route.ts
 import { NextResponse } from 'next/server';
 import pool from '@/lib/mysqlConnection';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { FieldPacket } from 'mysql2'; // Import the FieldPacket type
+
+// Define User type
+interface User {
+  id: number;
+  full_name: string;
+  email: string;
+  password_hash: string;
+  is_verified: boolean;
+  role: string;
+}
 
 export async function POST(request: Request) {
   const { email, password } = await request.json();
 
   try {
     // Find user with the provided email
-    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]) as [User[], FieldPacket[]];
 
     if (users.length === 0) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
@@ -37,7 +47,8 @@ export async function POST(request: Request) {
     );
 
     // Set token in HTTP-only cookie
-    cookies().set('authToken', token, {
+    const cookieStore = await cookies();
+    cookieStore.set('authToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60, // 7 days
@@ -50,7 +61,8 @@ export async function POST(request: Request) {
       user: {
         id: user.id,
         fullName: user.full_name,
-        email: user.email
+        email: user.email,
+        role: user.role,
       }
     });
   } catch (error) {

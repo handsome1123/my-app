@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Heart, ChevronRight, ChevronLeft, Eye, Truck, Phone, ShieldCheck } from 'lucide-react';
 import { products } from "@/data/products";
+import { useRouter } from 'next/navigation';
 
 import { useEffect, useState } from "react";
 
@@ -10,15 +11,18 @@ interface Product {
   id: string;
   name: string;
   price: number;
-  image: string;
+  imageUrl: string;
   category: string;
   seller: string;
+  discount: number;
+  originalPrice: number;
 }
 
 export default function ProductsPage() {
 
   const[products, setProducts] = useState<Product[]>([]);
   const[loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -39,6 +43,12 @@ export default function ProductsPage() {
     return <p>Loading products...</p>
   }
 
+  const handleLogout = async () => {
+    await fetch('/api/logout', { method: 'POST' });
+    localStorage.removeItem('userEmail');
+    router.push('/auth/login');
+  };
+
   return (
     <main>
       {/* Explore Our Porducts */}
@@ -49,6 +59,13 @@ export default function ProductsPage() {
             <h2 className="text-2xl font-bold">Explore Our Products</h2>
           </div>
         </div>
+
+        <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Logout
+          </button>
 
         {/* Products Grid */}
 
