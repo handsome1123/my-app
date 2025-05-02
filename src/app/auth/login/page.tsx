@@ -10,14 +10,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  useEffect(() => {
-    const defaultEmail = searchParams.get("email");
-    if (defaultEmail) setEmail(defaultEmail);
-  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +34,10 @@ export default function LoginPage() {
         return;
       }
   
+      // Store user data in localStorage
+      localStorage.setItem("userEmail", JSON.stringify(data.user));
+  
+      // Role-based redirection
       const role = data.user?.role;
   
       if (role === "admin") {
@@ -46,7 +45,7 @@ export default function LoginPage() {
       } else if (role === "seller") {
         router.push("/seller/dashboard");
       } else {
-        router.push("/products"); // default route for regular users
+        router.push("/buyer/home"); // default route for regular users
       }
   
     } catch (err) {
@@ -54,6 +53,7 @@ export default function LoginPage() {
       setError("Something went wrong. Please try again.");
     }
   };
+  
   
 
   return (

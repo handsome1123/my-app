@@ -1,11 +1,10 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Heart, ChevronRight, ChevronLeft, Eye, Truck, Phone, ShieldCheck } from 'lucide-react';
-import { products } from "@/data/products";
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-import { useEffect, useState } from "react";
+import { Heart, Eye } from 'lucide-react';
+import Image from 'next/image';
 
 interface Product {
   id: string;
@@ -19,78 +18,100 @@ interface Product {
 }
 
 export default function ProductsPage() {
-
-  const[products, setProducts] = useState<Product[]>([]);
-  const[loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Get user email from localStorage (or alternatively use cookies/JWT)
   useEffect(() => {
-    const fetchProduct = async () => {
-      try{
-        const res = await fetch('/api/products');
-        const result = await res.json();
-        setProducts(result.data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }finally{
-        setLoading(false);
-      }
-    }
-    fetchProduct();
+    const email = localStorage.getItem("userEmail");
+    setUserEmail(email);
   }, []);
 
-  if(loading) {
-    return <p>Loading products...</p>
-  }
+  // Fetch products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        const result = await res.json();
+        if (res.ok) setProducts(result.data || []);
+        else throw new Error(result.message || 'Failed to fetch');
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
+  // Handle logout
   const handleLogout = async () => {
-    await fetch('/api/logout', { method: 'POST' });
-    localStorage.removeItem('userEmail');
-    router.push('/auth/login');
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+      localStorage.removeItem('userEmail');
+      router.push('/auth/login');
+    } catch (err) {
+      console.error('Logout failed', err);
+    }
   };
 
   return (
-    <main>
-      {/* Explore Our Porducts */}
-      <div className="container mx-auto px-2 py-6">
-        <div className="flex items-center justify-between mb-8">
+    <main className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="flex flex-col items-center py-6 bg-white shadow">
+        <h1 className="text-3xl font-bold mb-2">Second Hand Store</h1>
+        {userEmail ? (
           <div className="flex items-center gap-4">
-            <div className="w-5 h-10 bg-gray-900 rounded-sm"></div>
-            <h2 className="text-2xl font-bold">Explore Our Products</h2>
+            <p className="text-gray-600">Welcome, {userEmail}</p>
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+            >
+              Logout
+            </button>
           </div>
-        </div>
+        ) : (
+          <Link href="/auth/login" className="text-blue-600 underline">
+            Login
+          </Link>
+        )}
+      </div>
 
-        <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-          >
-            Logout
-          </button>
+      {/* Carousel Placeholder */}
+      <section className="w-full h-64 bg-blue-300 flex items-center justify-center text-2xl font-bold text-white mb-6">
+        Image Carousel Goes Here
+      </section>
 
-        {/* Products Grid */}
+      {/* Products Section */}
+      <section className="container mx-auto px-4 py-6">
+        <h2 className="text-2xl font-bold mb-4">Explore Our Products</h2>
 
-        <div className="container mx-auto px-2 py-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((item) => (
-              <Link href={`/products/${item.id}`} key={item.id}>
-                <div className="group relative bg-gray-50 rounded-lg p-4 cursor-pointer hover:shadow-md transition">
+        {loading ? (
+          <p>Loading products...</p>
+        ) : products.length === 0 ? (
+          <p>No products available.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <Link href={`/products/${product.id}`} key={product.id}>
+                <div className="group relative bg-white p-4 rounded-lg shadow hover:shadow-md transition">
                   <div className="relative aspect-square mb-4">
-                    {/* Discount Badge */}
-                    {item.discount && (
+                    {product.discount > 0 && (
                       <span className="absolute top-2 left-2 bg-red-500 text-white text-sm px-2 py-1 rounded">
-                        -{item.discount}%
+                        -{product.discount}%
                       </span>
                     )}
 
-                    {/* Product Image */}
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-full h-full object-cover rounded-lg"
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      fill
+                      className="object-cover rounded-lg"
+                      sizes="(max-width: 768px) 100vw, 33vw"
                     />
 
-
-                    {/* Action Buttons (Heart, Eye) */}
                     <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button className="p-2 bg-white rounded-full hover:bg-gray-100">
                         <Heart className="w-4 h-4" />
@@ -101,24 +122,19 @@ export default function ProductsPage() {
                     </div>
                   </div>
 
-                  {/* Product Name */}
-                  <h3 className="font-semibold mb-2">{item.name}</h3>
-
-                  {/* Price */}
+                  <h3 className="font-semibold mb-2">{product.name}</h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-red-500">${item.price}</span>
-                    {item.originalPrice && (
-                      <span className="text-gray-400 line-through">${item.originalPrice}</span>
+                    <span className="text-red-500">${product.price}</span>
+                    {product.originalPrice && (
+                      <span className="text-gray-400 line-through">${product.originalPrice}</span>
                     )}
                   </div>
                 </div>
               </Link>
             ))}
           </div>
-        </div>
-
-      </div>
+        )}
+      </section>
     </main>
   );
 }
-

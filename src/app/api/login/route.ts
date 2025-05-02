@@ -3,7 +3,7 @@ import pool from '@/lib/mysqlConnection';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
-import { FieldPacket } from 'mysql2'; // Import the FieldPacket type
+import { FieldPacket } from 'mysql2';
 
 // Define User type
 interface User {
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
-    // Create JWT token
+    // Create JWT token (optional, if you plan to use a token for sessions)
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET || 'your-secret-key',
