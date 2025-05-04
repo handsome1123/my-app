@@ -1,4 +1,5 @@
 "use client";
+
 import { useParams } from "next/navigation";
 import { ShoppingCart, CreditCard } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -36,6 +37,8 @@ export default function ProductDetailPage() {
 
     fetchProduct();
   }, [numericId]);
+
+
 
   if (!product) return <div className="p-6 text-center">Product not found.</div>;
 
@@ -75,7 +78,7 @@ export default function ProductDetailPage() {
             </div>
             <div className="mt-4 flex gap-4">
               <Link
-                href={`/buyer/checkout?id=${product.id}`}
+                href={`/buyer/checkout/${product.id}`}
                 className="flex items-center gap-2 bg-blue-600 text-white text-lg px-6 py-2 rounded-lg hover:bg-blue-700 transition shadow-md"
               >
                 <CreditCard size={20} />

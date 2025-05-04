@@ -1,23 +1,50 @@
 "use client";
 
-import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { products } from "@/data/products";
 import Link from "next/link";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import Image from "next/image";
 
-export default function CheckoutPage() {
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+
+export default function CheckoutPage({params }: {params: {id: string}}) {
+  const [product, setProduct] = useState<any>(null);
+  const router = useRouter();
+  
+
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const numericId = Number(id);
 
-  const product = products.find((p) => p.id === numericId);
 
   const [fullName, setFullName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+
+  useEffect(() => {
+    fetch(`/api/product/${params.id}`)
+      .then(res => res.json())
+      .then(data => setProduct(data));
+  }, [params.id]);
+
+  const handleCheckout = async () => {
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId: product.id }),
+    });
+
+    if (res.ok) {
+      alert('Order placed!');
+      router.push('/');
+    } else {
+      alert('Checkout failed');
+    }
+  };
 
   if (!product) {
     return (
