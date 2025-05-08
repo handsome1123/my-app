@@ -1,21 +1,20 @@
-// lib/nodemailer.ts
 import nodemailer from 'nodemailer';
 
-// Configure transporter (replace with your email service details)
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.EMAIL_PORT || '587'),
-  secure: process.env.EMAIL_SECURE === 'true',
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER || 'secondhand.mfu@gmail.com',
     pass: process.env.EMAIL_PASSWORD || 'imyl viwi lugc irhb'
+  },
+  tls: {
+    rejectUnauthorized: false // Allow self-signed certificates (not recommended for production)
   }
 });
 
 export async function sendOtpEmail(email: string, otpCode: string) {
   try {
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'Your App <no-reply@yourapp.com>',
+      from: process.env.EMAIL_FROM || '"MFU Secondhand" <secondhand.mfu@gmail.com>',
       to: email,
       subject: 'Verify Your Email Address',
       html: `

@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/mysqlConnection'; // Your MySQL connection
 import { sendOtpEmail } from '@/lib/nodemailer'; // Your nodemailer utility
+
 import bcrypt from 'bcryptjs'; // Add bcrypt to hash the password securely
 
 export async function POST(request: Request) {
   const { fullName, email, password, phone, address } = await request.json();
 
   // Check if the email is already registered
-  const [existingUser] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-  if (existingUser.length > 0) {
+  const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]) as any[];
+  if (rows.length > 0) {
     return NextResponse.json({ message: 'Email already exists' }, { status: 400 });
   }
 

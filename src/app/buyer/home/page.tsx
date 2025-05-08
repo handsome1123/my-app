@@ -170,60 +170,6 @@ export default function Home() {
           )}
         </div>
         </div>
-      
-            {/* Products Section */}
-            <section className="container mx-auto px-4 py-6">
-        <h2 className="text-2xl font-bold mb-4">Explore Our Products</h2>
-
-        {loading ? (
-          <p>Loading products...</p>
-        ) : products.length === 0 ? (
-          <p>No products available.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <Link href={`/products/${product.id}`} key={product.id}>
-                <div className="group relative bg-white p-4 rounded-lg shadow hover:shadow-md transition">
-                  <div className="relative aspect-square mb-4">
-                    {product.discount > 0 && (
-                      <span className="absolute top-2 left-2 bg-red-500 text-white text-sm px-2 py-1 rounded">
-                        -{product.discount}%
-                      </span>
-                    )}
-
-                    <Image
-                      src={product.imageUrl}
-                      alt={product.name}
-                      fill
-                      className="object-cover rounded-lg"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                    />
-
-                    <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 bg-white rounded-full hover:bg-gray-100">
-                        <Heart className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 bg-white rounded-full hover:bg-gray-100">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <h3 className="font-semibold mb-2">{product.name}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-red-500">${product.price}</span>
-                    {product.originalPrice && (
-                      <span className="text-gray-400 line-through">${product.originalPrice}</span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-      
-
 
       {/* View All Products Button */}
       <div className="mt-8 text-center">
