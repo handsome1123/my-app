@@ -1,14 +1,13 @@
-"use client";
+'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-
-import { Heart, ChevronRight, ChevronLeft, Eye, Truck, Phone, ShieldCheck } from 'lucide-react';
-import ImageCarousel from '@/components/ImageCarousel';
-import LoggedInHeader from "@/components/LoggedInHeader";
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+
+import { Heart, ChevronRight, Eye, Truck, Phone, ShieldCheck } from 'lucide-react';
+import ImageCarousel from '@/components/ImageCarousel';
+import LoggedInHeader from '@/components/LoggedInHeader';
 
 interface Product {
   id: string;
@@ -28,52 +27,45 @@ const heroImages = [
   { src: '/images/carousel/3.png', alt: 'Slide 3' },
   { src: '/images/carousel/4.png', alt: 'Slide 4' },
   { src: '/images/carousel/5.png', alt: 'Slide 5' },
-]
+];
 
 export default function Home() {
-
-  const [user, setUser] = useState<any>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-
   const router = useRouter();
   const searchParams = useSearchParams();
 
-
   useEffect(() => {
-    // Read user data from localStorage
-    const userData = JSON.parse(localStorage.getItem('userEmail') || '{}');
-    if (userData && userData.email) {
-      setUser(userData);
+    const email = localStorage.getItem('userEmail');
+    if (email) {
+      setUserEmail(email);
     } else {
-      // Redirect to login page if no user is found
-      router.push('/');
+      router.push('/auth/login'); // redirect if not logged in
     }
   }, [router]);
 
-  // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-          const res = await fetch('/api/products');
-          const result = await res.json();
-          if (res.ok) setProducts(result.data || []);
-          else throw new Error(result.message || 'Failed to fetch');
-        } catch (error) {
-          console.error('Error fetching products:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchProducts();
-    }, []);
+        const res = await fetch('/api/products');
+        const result = await res.json();
+        if (res.ok) setProducts(result.data || []);
+        else throw new Error(result.message || 'Failed to fetch products');
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
-  // Handle logout
   const handleLogout = async () => {
     try {
       await fetch('/api/logout', { method: 'POST' });
       localStorage.removeItem('userEmail');
-      router.push('/');
+      router.push('/auth/login');
     } catch (err) {
       console.error('Logout failed', err);
     }
@@ -81,70 +73,67 @@ export default function Home() {
 
   return (
     <main>
-      {/* LoggedInHeader */}
+      {/* Header */}
       <LoggedInHeader />
 
-      <div>
-        <h1>Welcome to the Dashboard</h1>
-
-        {user ? (
-          <div>
-            <p>Email: {user.email}</p>
-            <p>Full Name: {user.fullName}</p>
-            <p>Role: {user.role}</p>
-            <button onClick={handleLogout}>Logout</button>
+      {/* Welcome Message */}
+      <div className="container mx-auto px-4 py-4">
+        <h1 className="text-2xl font-bold">Welcome to the Dashboard</h1>
+        {userEmail ? (
+          <div className="mt-2">
+            <p className="text-gray-700">Logged in as: {userEmail}</p>
+            <button
+              onClick={handleLogout}
+              className="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+            >
+              Logout
+            </button>
           </div>
         ) : (
-          <p>Loading...</p>
+          <p>Loading user...</p>
         )}
       </div>
 
-      <button
-        onClick={handleLogout}
-        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-      >
-        Logout
-      </button>
-
-      {/* Categories Sidebar + Hero Section */}
+      {/* Main Layout: Categories + Hero Carousel */}
       <div className="container mx-auto px-4 py-4 flex gap-8">
-
-        {/* Categories */}
+        {/* Categories Sidebar */}
         <div className="hidden md:block w-64 space-y-4">
-          <div className="flex items-center justify-between hover:text-red-500 cursor-pointer">
-            <span>Woman's Fashion</span>
-            <ChevronRight className="w-4 h-4" />
-          </div>
-          <div className="flex items-center justify-between hover:text-red-500 cursor-pointer">
-            <span>Men's Fashion</span>
-            <ChevronRight className="w-4 h-4" />
-          </div>
-          <div className="hover:text-red-500 cursor-pointer">Electronics</div>
-          <div className="hover:text-red-500 cursor-pointer">Home & Lifestyle</div>
-          <div className="hover:text-red-500 cursor-pointer">Medicine</div>
-          <div className="hover:text-red-500 cursor-pointer">Sports & Outdoor</div>
-          <div className="hover:text-red-500 cursor-pointer">Baby's & Toys</div>
-          <div className="hover:text-red-500 cursor-pointer">Groceries & Pets</div>
-          <div className="hover:text-red-500 cursor-pointer">Health & Beauty</div>
+          {[
+            "Woman's Fashion",
+            "Men's Fashion",
+            'Electronics',
+            'Home & Lifestyle',
+            'Medicine',
+            'Sports & Outdoor',
+            "Baby's & Toys",
+            'Groceries & Pets',
+            'Health & Beauty',
+          ].map((category) => (
+            <div
+              key={category}
+              className="flex items-center justify-between hover:text-red-500 cursor-pointer"
+            >
+              <span>{category}</span>
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          ))}
         </div>
 
-        {/* Hero Section */}
+        {/* Hero Carousel */}
         <ImageCarousel images={heroImages} />
-
       </div>
 
-      {/* Explore Our Porducts */}
+      {/* Products Section */}
       <div className="container mx-auto px-2 py-6">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-5 h-10 bg-gray-900 rounded-sm"></div>
-            <h2 className="text-2xl font-bold">Explore Our Products</h2>
-          </div>
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-5 h-10 bg-gray-900 rounded-sm"></div>
+          <h2 className="text-2xl font-bold">Explore Our Products</h2>
         </div>
 
-        {/* Product List */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.length > 0 ? (
+          {loading ? (
+            <p>Loading products...</p>
+          ) : products.length > 0 ? (
             products.map((product) => (
               <div key={product.id} className="bg-white shadow-md rounded-lg p-4">
                 <Image
@@ -156,85 +145,88 @@ export default function Home() {
                 />
                 <h4 className="font-bold text-gray-800 mt-4">{product.name}</h4>
                 <p className="text-gray-600">{product.description}</p>
-                <p className="text-xl font-semibold text-gray-800">{product.price}</p>
+                <p className="text-xl font-semibold text-gray-800">${product.price}</p>
                 <button
+                  onClick={() => router.push(`/buyer/products/${product.id}`)}
                   className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
-                  onClick={() => router.push(`/product/${product.id}`) }
                 >
                   Add to Cart
                 </button>
               </div>
             ))
           ) : (
-            <p>Loading products...</p>
+            <p>No products found.</p>
           )}
         </div>
-        </div>
 
-      {/* View All Products Button */}
-      <div className="mt-8 text-center">
-        <a href="/products" className="inline-block bg-black text-white px-6 py-3 rounded-lg text-lg hover:bg-gray-800 transition">
-          View All Products
-        </a>
-      </div>
-
-
-      {/* New Arrivals Section */ }
-  <div className="container mx-auto px-4 py-12">
-    <h2 className="text-2xl font-bold mb-8">New Arrival</h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div className="col-span-2 row-span-2">
-        <div className="bg-black rounded-lg p-8 h-full flex flex-col justify-between text-white">
-          <h3 className="text-2xl font-bold">PlayStation 5</h3>
-          <p className="text-gray-300">Black and White version of the PS5 coming out on sale.</p>
-          <a href="#" className="text-white hover:underline">Shop Now</a>
+        {/* View All Button */}
+        <div className="mt-8 text-center">
+          <Link
+            href="/products"
+            className="inline-block bg-black text-white px-6 py-3 rounded-lg text-lg hover:bg-gray-800 transition"
+          >
+            View All Products
+          </Link>
         </div>
       </div>
-      <div className="bg-gray-900 rounded-lg p-6 text-white">
-        <h3 className="text-xl font-bold mb-2">Women's Collections</h3>
-        <p className="text-sm text-gray-300 mb-4">Featured woman collections that give you another vibe.</p>
-        <a href="#" className="text-white hover:underline">Shop Now</a>
-      </div>
-      <div className="bg-gray-900 rounded-lg p-6 text-white">
-        <h3 className="text-xl font-bold mb-2">Speakers</h3>
-        <p className="text-sm text-gray-300 mb-4">Amazon wireless speakers</p>
-        <a href="#" className="text-white hover:underline">Shop Now</a>
-      </div>
-      <div className="bg-gray-900 rounded-lg p-6 text-white">
-        <h3 className="text-xl font-bold mb-2">Perfume</h3>
-        <p className="text-sm text-gray-300 mb-4">GUCCI INTENSE OUD EDP</p>
-        <a href="#" className="text-white hover:underline">Shop Now</a>
-      </div>
-    </div>
-  </div>
 
-  {/* Services Section */ }
-  <div className="container mx-auto px-4 py-12">
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div className="flex flex-col items-center text-center">
-        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <Truck className="w-6 h-6" />
+      {/* New Arrivals */}
+      <div className="container mx-auto px-4 py-12">
+        <h2 className="text-2xl font-bold mb-8">New Arrival</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="col-span-2 row-span-2 bg-black text-white rounded-lg p-8 flex flex-col justify-between">
+            <h3 className="text-2xl font-bold">PlayStation 5</h3>
+            <p className="text-gray-300">Black and White version of the PS5 coming out on sale.</p>
+            <a href="#" className="text-white hover:underline">Shop Now</a>
+          </div>
+          <div className="bg-gray-900 text-white rounded-lg p-6">
+            <h3 className="text-xl font-bold mb-2">Women's Collections</h3>
+            <p className="text-sm text-gray-300 mb-4">Featured woman collections that give you another vibe.</p>
+            <a href="#" className="hover:underline">Shop Now</a>
+          </div>
+          <div className="bg-gray-900 text-white rounded-lg p-6">
+            <h3 className="text-xl font-bold mb-2">Speakers</h3>
+            <p className="text-sm text-gray-300 mb-4">Amazon wireless speakers</p>
+            <a href="#" className="hover:underline">Shop Now</a>
+          </div>
+          <div className="bg-gray-900 text-white rounded-lg p-6">
+            <h3 className="text-xl font-bold mb-2">Perfume</h3>
+            <p className="text-sm text-gray-300 mb-4">GUCCI INTENSE OUD EDP</p>
+            <a href="#" className="hover:underline">Shop Now</a>
+          </div>
         </div>
-        <h3 className="font-semibold mb-2">FREE AND FAST DELIVERY</h3>
-        <p className="text-sm text-gray-600">Free delivery for all orders over $140</p>
       </div>
-      <div className="flex flex-col items-center text-center">
-        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <Phone className="w-6 h-6" />
-        </div>
-        <h3 className="font-semibold mb-2">24/7 CUSTOMER SERVICE</h3>
-        <p className="text-sm text-gray-600">Friendly 24/7 customer support</p>
-      </div>
-      <div className="flex flex-col items-center text-center">
-        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <ShieldCheck className="w-6 h-6" />
-        </div>
-        <h3 className="font-semibold mb-2">MONEY BACK GUARANTEE</h3>
-        <p className="text-sm text-gray-600">We return money within 30 days</p>
-      </div>
-    </div>
-  </div>
 
-    </main >
+      {/* Services Section */}
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            {
+              icon: <Truck className="w-6 h-6" />,
+              title: 'FREE AND FAST DELIVERY',
+              desc: 'Free delivery for all orders over $140',
+            },
+            {
+              icon: <Phone className="w-6 h-6" />,
+              title: '24/7 CUSTOMER SERVICE',
+              desc: 'Friendly 24/7 customer support',
+            },
+            {
+              icon: <ShieldCheck className="w-6 h-6" />,
+              title: 'MONEY BACK GUARANTEE',
+              desc: 'We return money within 30 days',
+            },
+          ].map(({ icon, title, desc }) => (
+            <div key={title} className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                {icon}
+              </div>
+              <h3 className="font-semibold mb-2">{title}</h3>
+              <p className="text-sm text-gray-600">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </main>
   );
 }

@@ -1,157 +1,121 @@
+// pages/buyer/checkout.tsx
+
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { products } from "@/data/products";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { CreditCard } from "lucide-react";
 import Link from "next/link";
-import LoggedInHeader from "@/components/LoggedInHeader";
-import Image from "next/image";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+  seller: string;
+  description: string;
+}
 
-
-export default function CheckoutPage({params }: {params: {id: string}}) {
-  const [product, setProduct] = useState<any>(null);
+export default function CheckoutPage() {
   const router = useRouter();
-  
+  const { id } = router.query;  // Get the product ID from query params
+  const productId = id ? Number(id) : null;
 
-  const searchParams = useSearchParams();
-  const id = searchParams.get('id');
-  const numericId = Number(id);
-
-
-  const [fullName, setFullName] = useState('');
-  const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [product, setProduct] = useState<Product | null>(null);
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/product/${params.id}`)
-      .then(res => res.json())
-      .then(data => setProduct(data));
-  }, [params.id]);
+    if (productId) {
+      const fetchProduct = async () => {
+        try {
+          const response = await fetch(`/api/products/${productId}`);
+          if (!response.ok) throw new Error("Product not found");
+          const data = await response.json();
+          setProduct(data.product);
+        } catch (error) {
+          console.error("Error fetching product:", error);
+          setProduct(null);
+        }
+      };
+      fetchProduct();
+    }
+  }, [productId]);
 
   const handleCheckout = async () => {
-    const res = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId: product.id }),
-    });
-
-    if (res.ok) {
-      alert('Order placed!');
-      router.push('/');
-    } else {
-      alert('Checkout failed');
+    if (!address) {
+      alert("Please provide an address.");
+      return;
     }
+
+    setLoading(true);
+
+    setTimeout(() => {
+      alert("Checkout successful!");
+      setLoading(false);
+      router.push("/order-success"); // Navigate to confirmation page after checkout
+    }, 2000);
   };
 
-  if (!product) {
-    return (
-      <main>
-        <LoggedInHeader />
-        <div className="p-6 text-center">Product not found.</div>
-      </main>
-    );
-  }
-
-  async function handlePlaceOrder(e: React.FormEvent) {
-    e.preventDefault();
-
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fullName,
-          address,
-          phone,
-          email,
-          items: [{ productId: product.id, quantity: 1 }],
-          totalAmount: product.price,
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log("Order placed:", result);
-        alert("Order placed successfully!");
-      } else {
-        alert("Failed to place order.");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("An error occurred.");
-    }
-  }
+  if (!product) return <div className="p-6 text-center">Loading product details...</div>;
 
   return (
     <main>
-      <LoggedInHeader />
-      <div className="bg-gray-100 min-h-screen py-8">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-4 text-gray-500">
-            <Link href="/products" className="hover:underline">
-              Products
-            </Link>
-            <span className="mx-2">/</span>
-            <span>Checkout</span>
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+        <Link href="/products" className="text-blue-600 hover:underline mb-4 inline-block">
+          &larr; Back to Products
+        </Link>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div className="relative w-full aspect-square">
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              width={400}
+              height={400}
+              className="rounded-lg object-cover shadow-md"
+            />
           </div>
 
-          <div className="lg:grid lg:grid-cols-2 lg:gap-8">
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8 lg:mb-0">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Billing Details</h2>
-              <form className="space-y-4" onSubmit={handlePlaceOrder}>
-                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" className="w-full border p-2 rounded" required />
-                <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address" className="w-full border p-2 rounded" required />
-                <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone Number" className="w-full border p-2 rounded" required />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email Address" className="w-full border p-2 rounded" required />
+          <div className="space-y-4">
+            <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
+            <p className="text-gray-700 text-lg">{product.description || "No description available."}</p>
 
-                <button type="submit" className="bg-green-500 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded w-full">
-                  Place Order
-                </button>
-              </form>
+            <div className="text-2xl font-semibold text-green-600">
+              ${product.price.toLocaleString()}
             </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
-
-              <div className="mb-4 flex items-center gap-4">
-                <div className="h-24 w-24 relative">
-                  <Image src={product.imageUrl} alt={product.name} fill className="object-contain rounded" />
-                </div>
-                <div>
-                  <div className="font-semibold text-lg">{product.name}</div>
-                  <div className="text-gray-600">${product.price.toLocaleString()}</div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 pt-4 mb-4">
-                <div className="flex justify-between text-gray-600 mb-2">
-                  <span>Subtotal :</span>
-                  <span>${product.price.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-gray-600 mb-2">
-                  <span>Shipping :</span>
-                  <span>Free</span>
-                </div>
-                <div className="flex justify-between font-semibold text-gray-900 mb-4">
-                  <span>Total :</span>
-                  <span>${product.price.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment</h3>
-                <div className="flex justify-center">
-                  <img src="/images/mike_bank.png" alt="Bank Details" width="300" />
-                </div>
-              </div>
-
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>Category: <span className="font-medium">{product.category ?? "General"}</span></p>
+              <p>Seller: <span className="font-medium">{product.seller ?? "Unknown"}</span></p>
+              <p>Pickup Location: <span className="font-medium">MFU Canteen</span></p>
+              <p>Pickup Date: <span className="font-medium">{new Date().toLocaleDateString()}</span></p>
             </div>
 
+            <div className="mt-6">
+              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="address">
+                Shipping Address
+              </label>
+              <textarea
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-md shadow-sm"
+                placeholder="Enter your shipping address"
+                rows={4}
+              ></textarea>
+            </div>
+
+            <div className="mt-4 flex gap-4">
+              <button
+                onClick={handleCheckout}
+                disabled={loading}
+                className="flex items-center gap-2 bg-blue-600 text-white text-lg px-6 py-2 rounded-lg hover:bg-blue-700 transition shadow-md disabled:bg-gray-400"
+              >
+                {loading ? "Processing..." : <><CreditCard size={20} /> Checkout</>}
+              </button>
+            </div>
           </div>
         </div>
       </div>
