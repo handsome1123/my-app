@@ -1,40 +1,46 @@
 import { NextResponse } from 'next/server';
-import pool from '@/lib/mysqlConnection'; // Your MySQL connection
-import { sendOtpEmail } from '@/lib/nodemailer'; // Your nodemailer utility
+import pool from '@/lib/mysqlConnection';
+import { sendOtpEmail } from '@/lib/nodemailer';
+import bcrypt from 'bcryptjs';
 
-import bcrypt from 'bcryptjs'; // Add bcrypt to hash the password securely
+// Define the type for a user row (add other fields if needed)
+interface UserRow {
+  id: number;
+  email: string;
+}
 
 export async function POST(request: Request) {
   const { fullName, email, password, phone, address } = await request.json();
 
   // Check if the email is already registered
-  const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]) as any[];
+  const [rows] = await pool.query<UserRow[]>(
+    'SELECT * FROM users WHERE email = ?',
+    [email]
+  );
+
   if (rows.length > 0) {
     return NextResponse.json({ message: 'Email already exists' }, { status: 400 });
   }
 
   const generateNumericOtp = () => {
-    // Generate a random 6-digit number between 100000 and 999999
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
-  
+
   const otpCode = generateNumericOtp();
 
-  // Set OTP expiration to 10 minutes from now
   const otpExpires = new Date();
   otpExpires.setMinutes(otpExpires.getMinutes() + 10);
 
-  // Hash the password securely before saving to the database
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Insert user record with OTP and OTP expiration time
   try {
-    const result = await pool.query(
-      'INSERT INTO users (full_name, email, password_hash, phone, address, otp_code, otp_expires) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    // We don't need to use the result of the insert, so just `await` it
+    await pool.query(
+      `INSERT INTO users (full_name, email, password_hash, phone, address, otp_code, otp_expires)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [fullName, email, hashedPassword, phone, address, otpCode, otpExpires]
     );
 
-    // Send OTP email
     await sendOtpEmail(email, otpCode);
 
     return NextResponse.json({ message: 'Registration successful. Please verify your email.' });

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Image from 'next/image' // ✅ Add this import
 
 interface Props {
   onClose: () => void
@@ -43,7 +44,8 @@ export default function RegisterModal({ onClose, onSwitchToLogin }: Props) {
           onSwitchToLogin()
         }, 1500)
       }
-    } catch (err) {
+    } catch {
+      // ✅ removed unused `err`
       setError('Something went wrong. Please try again.')
     }
   }
@@ -106,7 +108,12 @@ export default function RegisterModal({ onClose, onSwitchToLogin }: Props) {
               type="button"
               className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition duration-300"
             >
-              <img src="/images/google-icon.png" alt="Google" className="h-5 w-5" />
+              <Image
+                src="/images/google-icon.png"
+                alt="Google"
+                width={20}
+                height={20}
+              />
               Sign up with Google
             </button>
           </div>

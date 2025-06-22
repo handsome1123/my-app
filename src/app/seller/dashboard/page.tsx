@@ -1,12 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faChartBar,
-  faBoxOpen,
-  faMoneyBillWave,
-  faShoppingCart,
   faBell,
   faEnvelope,
   faSearch,
@@ -23,7 +20,7 @@ const DashboardCard = ({ title, value, color }) => (
 const RecentOrderRow = ({ order }) => (
   <div className="bg-white rounded-md shadow-sm p-3 mb-2 flex items-center text-sm">
     <div className="w-12 h-12 mr-3 overflow-hidden rounded-md shadow-inner">
-      <img src={order.image} alt={order.productCode} className="w-full h-full object-cover" />
+      <Image src={order.image} alt={order.productCode} className="w-full h-full object-cover" />
     </div>
     <div className="flex-grow">
       <p className="font-semibold text-gray-800">{order.productCode}</p>
@@ -40,11 +37,11 @@ const UserRatingCard = ({ rating }) => (
   <div className="bg-white rounded-md shadow-sm p-3 mb-2">
     <div className="flex items-center mb-2">
       <div className="w-8 h-8 mr-2 overflow-hidden rounded-full">
-        <img src={rating.avatar} alt={rating.username} className="w-full h-full object-cover" />
+        <Image src={rating.avatar} alt={rating.username} className="w-full h-full object-cover" />
       </div>
       <p className="text-sm font-semibold text-gray-800">{rating.username}</p>
     </div>
-    <p className="text-gray-600 text-xs italic mb-2">"{rating.comment}"</p>
+    <p className="text-gray-600 text-xs italic mb-2">{`"${rating.comment}"`}</p>
     <div className="flex items-center">
       {[...Array(5)].map((_, i) => (
         <svg key={i} className={`w-4 h-4 ${i < rating.rating ? 'text-yellow-500' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">

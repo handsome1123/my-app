@@ -1,12 +1,20 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/mysqlConnection';
 
+interface UserRow {
+  id: number;
+}
+
+interface ProductRow {
+  price: string; // or `number` depending on your DB driver config
+}
+
 export async function POST(req: Request) {
   const { productId, email, address, quantity } = await req.json();
 
   try {
     // 1. Get user_id from email
-    const [userRows]: any = await pool.query(
+    const [userRows] = await pool.query<UserRow[]>(
       'SELECT id FROM users WHERE email = ?',
       [email]
     );
@@ -18,7 +26,7 @@ export async function POST(req: Request) {
     const userId = userRows[0].id;
 
     // 2. Get product price
-    const [productRows]: any = await pool.query(
+    const [productRows] = await pool.query<ProductRow[]>(
       'SELECT price FROM products WHERE id = ?',
       [productId]
     );

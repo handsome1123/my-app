@@ -1,4 +1,3 @@
-// app/verify/page.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -9,23 +8,23 @@ export default function VerifyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
-  
+
   const [otp, setOtp] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !otp) {
       setError('Email and OTP code are required');
       return;
     }
-    
+
     setIsSubmitting(true);
     setError('');
-    
+
     try {
       const response = await fetch('/api/verify-otp', {
         method: 'POST',
@@ -34,30 +33,34 @@ export default function VerifyPage() {
         },
         body: JSON.stringify({ email, otpCode: otp }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Verification failed');
       }
-      
+
       setSuccess('Email verified successfully! Redirecting to login...');
       setTimeout(() => {
         router.push('/auth/login');
       }, 2000);
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Something went wrong');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   const handleResendOtp = async () => {
     if (!email) {
       setError('Email is required to resend OTP');
       return;
     }
-    
+
     try {
       const response = await fetch('/api/resend-otp', {
         method: 'POST',
@@ -66,19 +69,23 @@ export default function VerifyPage() {
         },
         body: JSON.stringify({ email }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to resend OTP');
       }
-      
+
       setSuccess('OTP code resent successfully');
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend OTP');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to resend OTP');
+      }
     }
   };
-  
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
       <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-lg shadow">
@@ -90,19 +97,19 @@ export default function VerifyPage() {
             Enter the 6-digit code sent to {email || 'your email'}
           </p>
         </div>
-        
+
         {error && (
           <div className="bg-red-50 p-4 rounded-md">
             <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
-        
+
         {success && (
           <div className="bg-green-50 p-4 rounded-md">
             <p className="text-sm text-green-700">{success}</p>
           </div>
         )}
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="otp" className="sr-only">
@@ -120,7 +127,7 @@ export default function VerifyPage() {
               maxLength={6}
             />
           </div>
-          
+
           <div>
             <button
               type="submit"
@@ -131,19 +138,19 @@ export default function VerifyPage() {
             </button>
           </div>
         </form>
-        
+
         <div className="text-center mt-4">
           <button
             type="button"
             className="text-sm text-indigo-600 hover:underline"
             onClick={handleResendOtp}
           >
-            Didn't receive code? Resend OTP
+            Didn&apos;t receive code? Resend OTP
           </button>
         </div>
-        
+
         <div className="text-center mt-4">
-          <Link href="/login" className="text-sm text-gray-600 hover:underline">
+          <Link href="/auth/login" className="text-sm text-gray-600 hover:underline">
             Back to Login
           </Link>
         </div>

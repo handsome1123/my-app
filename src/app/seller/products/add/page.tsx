@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faCamera, faTrash, faPlus, faCalendarAlt } from '@fortawesome/free-solid-svg-icons'; // Import more icons as needed
+import { faArrowLeft, faCamera, faTrash, faPlus, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 
 export default function AddNewProduct() {
   return (
@@ -38,10 +39,19 @@ export default function AddNewProduct() {
               <span className="bg-gray-200 text-gray-700 rounded-md px-2 py-1 text-xs mr-2">Tag</span>
             </div>
             <div className="relative w-48 h-48 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-              <img src="https://via.placeholder.com/150/D3D3D3/FFFFFF?Text=Product" alt="Product Preview" className="max-w-full max-h-full object-cover" />
+              <Image
+                src="https://via.placeholder.com/150/D3D3D3/FFFFFF?Text=Product"
+                alt="Product Preview"
+                className="object-cover"
+                fill
+                sizes="192px"
+              />
               <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-center py-2 flex justify-around">
                 <button className="text-sm">Replace</button>
-                <button className="text-sm text-red-400">Remove</button>
+                <button className="text-sm text-red-400 flex items-center">
+                  <FontAwesomeIcon icon={faTrash} className="mr-1" />
+                  Remove
+                </button>
               </div>
             </div>
             <button className="mt-3 text-blue-500 hover:underline text-sm flex items-center">

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation"; // For Next.js App Directory
 import { CreditCard } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Product {
   id: number;
@@ -74,7 +75,7 @@ export default function ProductCheckoutPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           <div className="relative w-full aspect-square">
-            <img
+            <Image
               src={product.imageUrl}
               alt={product.name}
               width={400}

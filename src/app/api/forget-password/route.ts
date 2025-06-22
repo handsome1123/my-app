@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/mysqlConnection';
-import { sendOtpEmail } from '@/lib/nodemailer'; // ✅ import your function
+import { sendOtpEmail } from '@/lib/nodemailer';
+
+interface UserRow {
+  id: number;
+  email: string;
+  // add other fields if needed like name, otp_code, otp_expires, etc.
+}
 
 export async function POST(request: Request) {
   const { email } = await request.json();
 
   try {
     // 1. Check if user exists
-    const [rows]: any = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    const [rows] = await pool.query<UserRow[]>(
+      'SELECT * FROM users WHERE email = ?',
+      [email]
+    );
+
     if (rows.length === 0) {
       return NextResponse.json({ message: 'Email not found' }, { status: 404 });
     }
@@ -17,13 +27,12 @@ export async function POST(request: Request) {
     const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiration
 
     // 3. Update OTP in database
-    await pool.query('UPDATE users SET otp_code = ?, otp_expires = ? WHERE email = ?', [
-      otpCode,
-      otpExpires,
-      email,
-    ]);
+    await pool.query(
+      'UPDATE users SET otp_code = ?, otp_expires = ? WHERE email = ?',
+      [otpCode, otpExpires, email]
+    );
 
-    // 4. Send OTP Email (✅ super clean now)
+    // 4. Send OTP Email
     await sendOtpEmail(email, otpCode);
 
     return NextResponse.json({ message: 'OTP sent successfully' });

@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faCheckCircle, faTruck, faBoxOpen, faCalendarAlt, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 
 const OrderItemDetail = ({ item }) => (
   <div className="flex items-start mb-4 border-b border-gray-200 pb-4">
     <div className="w-24 h-24 mr-4 overflow-hidden rounded-md shadow-inner">
-      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+      <Image src={item.image} alt={item.name} className="w-full h-full object-cover" />
     </div>
     <div className="flex-grow">
       <h3 className="text-sm font-semibold text-gray-900">{item.name}</h3>
@@ -53,7 +54,6 @@ const OrderStatusDetail = ({ status }) => {
       break;
     default:
       statusText = 'Unknown';
-      
       colorClass = 'text-gray-500';
   }
 
@@ -82,7 +82,7 @@ export default function OrderDetailsPage() {
           <div className="md:grid md:grid-cols-2 md:gap-6 mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-2">Order Information</h2>
-              <p className="text-gray-600 text-sm">Order Date: Thu, 17th Nov '16</p>
+              <p className="text-gray-600 text-sm">Order Date: Thu, 17th Nov &apos;16</p>
               <p className="text-gray-600 text-sm">Status: <OrderStatusDetail status="shipped" /></p>
               <p className="text-gray-600 text-sm">Tracking Number: TRACK-123456789</p>
               <p className="text-gray-600 text-sm">Estimated Delivery: 24 December 2016</p>

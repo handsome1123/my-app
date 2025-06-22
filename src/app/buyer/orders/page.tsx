@@ -1,6 +1,7 @@
 'use client';
 import { orders } from "@/data/orders";
 import LoggedInHeader from "@/components/LoggedInHeader";
+import Image from "next/image";
 
 interface Order {
   orderId: string;
@@ -56,7 +57,7 @@ const OrderCard = ({ order }: { order: Order }) => {
       {order.items.map((item) => (
         <div key={item.id} className="flex items-center mb-4">
           <div className="w-16 h-16 mr-4 overflow-hidden rounded-md shadow-inner">
-            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+            <Image src={item.image} alt={item.name} className="w-full h-full object-cover" />
           </div>
           <div className="flex-grow">
             <h3 className="text-sm font-semibold text-gray-800">{item.name}</h3>

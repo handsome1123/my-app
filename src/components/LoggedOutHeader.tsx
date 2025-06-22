@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import RegisterModal from '@/components/RegisterModal';
@@ -17,7 +18,7 @@ const LoggedOutHeader = () => {
     <header>
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/">
-          <img src="/images/sh_logo.jpg" alt="Logo" className="h-15 w-auto" />
+          <Image src="/images/sh_logo.jpg" alt="Logo" className="h-15 w-auto" />
         </Link>
 
         <nav className="hidden md:flex space-x-8">

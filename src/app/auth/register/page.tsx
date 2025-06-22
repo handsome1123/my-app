@@ -16,7 +16,7 @@ export default function RegisterPage() {
 
   const router = useRouter();
 
-  const handleRegister = async (e: React.FormEvent) => {
+    const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -36,12 +36,13 @@ export default function RegisterPage() {
       } else {
         setError(data.message || "Registration failed.");
       }
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+ 
 
   return (
     <main className="bg-gray-100 min-h-screen flex items-center justify-center">

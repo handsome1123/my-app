@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faMoneyBillWave, faCalendarAlt, faFileInvoiceDollar } from '@fortawesome/free-solid-svg-icons'; // Import more icons as needed
+import { faMoneyBillWave } from '@fortawesome/free-solid-svg-icons'; // Import more icons as needed
 
 const PayoutCard = ({ payout }) => (
   <div className="bg-white rounded-md shadow-sm p-4 mb-4">

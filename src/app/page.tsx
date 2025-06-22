@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { Heart, ChevronRight, Eye, Truck, Phone, ShieldCheck } from "lucide-react";
 import ImageCarousel from "@/components/ImageCarousel";
 import Link from "next/link";
@@ -50,20 +51,20 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4 flex gap-8">
           <div className="hidden md:block w-64 space-y-4">
             <div className="flex items-center justify-between hover:text-red-500 cursor-pointer">
-              <span>Woman's Fashion</span>
+              <span>Woman&apos;s Fashion</span>
               <ChevronRight className="w-4 h-4" />
             </div>
             <div className="flex items-center justify-between hover:text-red-500 cursor-pointer">
-              <span>Men's Fashion</span>
+              <span>Men&apos;s Fashion</span>
               <ChevronRight className="w-4 h-4" />
             </div>
             <div className="hover:text-red-500 cursor-pointer">Electronics</div>
-            <div className="hover:text-red-500 cursor-pointer">Home & Lifestyle</div>
+            <div className="hover:text-red-500 cursor-pointer">Home &amp; Lifestyle</div>
             <div className="hover:text-red-500 cursor-pointer">Medicine</div>
-            <div className="hover:text-red-500 cursor-pointer">Sports & Outdoor</div>
-            <div className="hover:text-red-500 cursor-pointer">Baby's & Toys</div>
-            <div className="hover:text-red-500 cursor-pointer">Groceries & Pets</div>
-            <div className="hover:text-red-500 cursor-pointer">Health & Beauty</div>
+            <div className="hover:text-red-500 cursor-pointer">Sports &amp; Outdoor</div>
+            <div className="hover:text-red-500 cursor-pointer">Baby&apos;s &amp; Toys</div>
+            <div className="hover:text-red-500 cursor-pointer">Groceries &amp; Pets</div>
+            <div className="hover:text-red-500 cursor-pointer">Health &amp; Beauty</div>
           </div>
 
           <ImageCarousel key={0} images={heroImages} />
@@ -89,10 +90,13 @@ export default function Home() {
                           -{item.discount}%
                         </span>
                       )}
-                      <img
+                      <Image
                         src={item.imageUrl}
                         alt={item.name}
-                        className="w-full h-full object-cover rounded-lg"
+                        fill
+                        className="object-cover rounded-lg"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        priority={true}
                       />
                       <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button className="p-2 bg-white rounded-full hover:bg-gray-100">
@@ -117,9 +121,11 @@ export default function Home() {
           </div>
 
           <div className="mt-8 text-center">
-            <a href="/products" className="inline-block bg-black text-white px-6 py-3 rounded-lg text-lg hover:bg-gray-800 transition">
-              View All Products
-            </a>
+            <Link href="/products">
+              <a className="inline-block bg-black text-white px-6 py-3 rounded-lg text-lg hover:bg-gray-800 transition">
+                View All Products
+              </a>
+            </Link>
           </div>
         </div>
 
@@ -135,7 +141,7 @@ export default function Home() {
               </div>
             </div>
             <div className="bg-gray-900 rounded-lg p-6 text-white">
-              <h3 className="text-xl font-bold mb-2">Women's Collections</h3>
+              <h3 className="text-xl font-bold mb-2">Women&apos;s Collections</h3>
               <p className="text-sm text-gray-300 mb-4">Featured woman collections that give you another vibe.</p>
               <a href="#" className="text-white hover:underline">Shop Now</a>
             </div>

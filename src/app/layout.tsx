@@ -1,6 +1,6 @@
 import { Inter } from 'next/font/google';
 import Image from "next/image";
-import { Search, ChevronRight, ShoppingCart, Heart, QrCode } from 'lucide-react';
+import { ChevronRight, QrCode } from 'lucide-react';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -86,8 +86,8 @@ export default function RootLayout({
                     <div className="flex items-center gap-4 mt-4 md:mt-0">
                       <QrCode className="w-24 h-24" />
                       <div className="flex gap-2">
-                        <a href="#" className="hover:text-gray-300"><img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" className="h-10" /></a>
-                        <a href="#" className="hover:text-gray-300"><img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Play Store" className="h-10" /></a>
+                        <a href="#" className="hover:text-gray-300"><Image src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" className="h-10" /></a>
+                        <a href="#" className="hover:text-gray-300"><Image src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Play Store" className="h-10" /></a>
                       </div>
                     </div>
                   </ul>

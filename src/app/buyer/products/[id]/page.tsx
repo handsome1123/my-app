@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
-import { ShoppingCart, CreditCard, X } from "lucide-react";
+import { CreditCard, X } from "lucide-react"; // Removed ShoppingCart
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import LoggedInHeader from "@/components/LoggedInHeader";
@@ -39,9 +39,15 @@ export default function ProductDetailPage() {
         }
         const data = await response.json();
         setProduct(data.product);
-      } catch (err: any) {
-        console.error("Error fetching product:", err);
-        setError(err.message || "Failed to fetch product.");
+      } catch (err) {
+        // Use unknown type and type guard
+        if (err instanceof Error) {
+          setError(err.message);
+          console.error("Error fetching product:", err);
+        } else {
+          setError("Failed to fetch product.");
+          console.error("Unknown error fetching product:", err);
+        }
         setProduct(null);
       } finally {
         setLoading(false);
@@ -51,6 +57,12 @@ export default function ProductDetailPage() {
     fetchProduct();
   }, [id]);
 
+  const [address, setAddress] = useState({
+    house: "",
+    district: "",
+    province: "",
+    postalCode: "",
+  });
 
   const handleCheckout = async () => {
     if (!product) return;
@@ -74,19 +86,14 @@ export default function ProductDetailPage() {
         alert(`Checkout failed: ${errorData?.message || "Something went wrong."}`);
       }
     } catch (err) {
-      console.error("Error during checkout:", err);
+      if (err instanceof Error) {
+        console.error("Error during checkout:", err);
+      } else {
+        console.error("Unknown error during checkout:", err);
+      }
       alert("An error occurred during checkout.");
     }
   };
-
-
-  const [address, setAddress] = useState({
-    house: '',
-    district: '',
-    province: '',
-    postalCode: ''
-  });
-
 
   if (loading) {
     return <div className="p-6 text-center">Loading product details...</div>;
@@ -135,7 +142,9 @@ export default function ProductDetailPage() {
               <p>
                 Category: <span className="font-medium">{product.category}</span>
               </p>
-              <p>Seller: <span className="font-medium">{product.seller}</span></p>
+              <p>
+                Seller: <span className="font-medium">{product.seller}</span>
+              </p>
             </div>
 
             <div className="mt-4 flex gap-4">
@@ -179,9 +188,7 @@ export default function ProductDetailPage() {
                 <div className="text-center space-y-1">
                   <p className="text-xl font-medium">{product.name}</p>
                   <p className="text-gray-700">Price: ฿{product.price}</p>
-                  <p className="text-gray-900 font-bold text-lg">
-                    Total: ฿{product.price}
-                  </p>
+                  <p className="text-gray-900 font-bold text-lg">Total: ฿{product.price}</p>
                 </div>
               </div>
 
@@ -196,9 +203,7 @@ export default function ProductDetailPage() {
                 />
 
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Pickup Address
-                  </h3>
+                  <h3 className="text-lg font-semibold text-gray-800">Pickup Address</h3>
 
                   <input
                     type="text"
@@ -244,7 +249,6 @@ export default function ProductDetailPage() {
                 >
                   Confirm Purchase
                 </button>
-
               </div>
             </div>
           </div>

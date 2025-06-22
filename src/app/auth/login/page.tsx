@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -11,13 +10,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
-  const searchParams = useSearchParams();
-
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-  
+
     try {
       const res = await fetch("/api/login", {
         method: "POST",
@@ -26,20 +23,20 @@ export default function LoginPage() {
         },
         body: JSON.stringify({ email, password }),
       });
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         setError(data.message || "Login failed");
         return;
       }
-  
+
       // Store user data in localStorage
       localStorage.setItem("userEmail", JSON.stringify(data.user));
-  
+
       // Role-based redirection
       const role = data.user?.role;
-  
+
       if (role === "admin") {
         router.push("/admin/dashboard");
       } else if (role === "seller") {
@@ -47,14 +44,11 @@ export default function LoginPage() {
       } else {
         router.push("/buyer/home"); // default route for regular users
       }
-  
     } catch (err) {
       console.error("Login error:", err);
       setError("Something went wrong. Please try again.");
     }
   };
-  
-  
 
   return (
     <main className="bg-gray-100 min-h-screen flex items-center justify-center">
@@ -130,7 +124,13 @@ export default function LoginPage() {
               type="button"
               className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition duration-300"
             >
-              <img src="/images/google-icon.png" alt="Google" className="h-5 w-5" />
+              <Image
+                src="/images/google-icon.png"
+                alt="Google"
+                width={20}
+                height={20}
+                className="h-5 w-5"
+              />
               Sign in with Google
             </button>
           </div>

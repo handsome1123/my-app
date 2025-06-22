@@ -1,47 +1,64 @@
 'use client';
 
-import Link from 'next/link';
+import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faBars,
   faSearch,
   faGripHorizontal,
   faChevronDown,
   faFilter,
   faPlus,
   faEllipsisV,
-} from '@fortawesome/free-solid-svg-icons'; // Import more icons as needed
+} from '@fortawesome/free-solid-svg-icons';
 
-const ProductRow = ({ product }) => (
+interface Product {
+  image: string;
+  name: string;
+  id: string;
+  price: number;
+  stock: number;
+  sales: number;
+  totalSales: number;
+  active: boolean;
+}
+
+const ProductRow = ({ product }: { product: Product }) => (
   <div className="bg-white rounded-md shadow-sm p-3 mb-2 flex items-center text-sm">
-    <div className="w-12 h-12 mr-3 overflow-hidden rounded-md shadow-inner">
-      <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+    <div className="w-12 h-12 mr-3 overflow-hidden rounded-md shadow-inner relative">
+      <Image
+        src={product.image}
+        alt={product.name}
+        layout="fill"
+        objectFit="cover"
+        unoptimized={false}
+        priority={false}
+        sizes="48px"
+      />
     </div>
     <div className="flex-grow">
       <h3 className="font-semibold text-gray-800">{product.name}</h3>
       <p className="text-gray-600 text-xs">{product.id}</p>
     </div>
-    <span className="text-gray-700">${product.price}</span>
-    <div className="flex items-center text-gray-600">
-      <span className="mr-1">{product.stock}</span>
+    <span className="text-gray-700">${product.price.toFixed(2)}</span>
+    <div className="flex items-center text-gray-600 mx-4">
+      <span>{product.stock}</span>
     </div>
-    <div className="relative w-32 bg-gray-200 rounded-full h-4 overflow-hidden">
+    <div className="relative w-32 bg-gray-200 rounded-full h-4 overflow-hidden mr-4">
       <div
         className="bg-green-400 h-full rounded-full"
         style={{ width: `${(product.sales / product.totalSales) * 100}%` }}
       ></div>
       <span className="absolute left-1/2 -translate-x-1/2 text-xs text-gray-700">{`${product.sales}/${product.totalSales}`}</span>
     </div>
-    <div className="flex items-center">
+    <div className="flex items-center mr-2">
       <div className={`w-6 h-6 rounded-full ${product.active ? 'bg-green-400' : 'bg-gray-400'}`}></div>
     </div>
-    <FontAwesomeIcon icon={faEllipsisV} className="text-gray-500 ml-2" />
+    <FontAwesomeIcon icon={faEllipsisV} className="text-gray-500 ml-2 cursor-pointer" />
   </div>
 );
 
 export default function ProductList() {
-  // Dummy product data for demonstration
-  const products = [
+  const products: Product[] = [
     {
       image: 'https://via.placeholder.com/48/000000/FFFFFF?Text=T',
       name: 'Oversized Heritage Washed',
@@ -190,10 +207,8 @@ export default function ProductList() {
 
         {/* Product List */}
         <div>
-          {products.map((product) => (
-            <div key={product.id} className="mb-2">
-              <ProductRow product={product} />
-            </div>
+          {products.map((product, idx) => (
+            <ProductRow key={`${product.name}-${idx}`} product={product} />
           ))}
         </div>
       </div>

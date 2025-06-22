@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faBoxOpen, faUser, faEnvelope, faPhone, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons'; // Import more icons as needed
+import { faArrowLeft, faUser, faEnvelope, faPhone } from '@fortawesome/free-solid-svg-icons'; // Import more icons as needed
 
 const OrderItem = ({ item }) => (
   <div className="flex items-start space-x-4 py-4 border-b border-gray-200">
     <div className="w-20 h-20 overflow-hidden rounded-md shadow-inner">
-      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+      <Image src={item.image} alt={item.name} className="w-full h-full object-cover" />
     </div>
     <div className="flex-grow">
       <h3 className="text-sm font-semibold text-gray-900">{item.name}</h3>

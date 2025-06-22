@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 interface Props {
   onClose: () => void;
@@ -57,7 +58,7 @@ export default function LoginModal({
               type="button"
               className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition duration-300"
             >
-              <img src="/images/google-icon.png" alt="Google" className="h-5 w-5" />
+              <Image src="/images/google-icon.png" alt="Google" width={20} height={20} className="h-5 w-5" />
               Log in with Google
             </button>
           </div>
@@ -79,5 +80,6 @@ export default function LoginModal({
         </div>
       </div>
     </div>
+    
   );
 }

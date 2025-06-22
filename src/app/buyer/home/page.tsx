@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
-import { Heart, ChevronRight, Eye, Truck, Phone, ShieldCheck } from 'lucide-react';
+import { ChevronRight, Truck, Phone, ShieldCheck } from 'lucide-react';
 import ImageCarousel from '@/components/ImageCarousel';
 import LoggedInHeader from '@/components/LoggedInHeader';
 
@@ -30,17 +30,13 @@ const heroImages = [
 ];
 
 export default function Home() {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     const email = localStorage.getItem('userEmail');
-    if (email) {
-      setUserEmail(email);
-    } else {
+    if (!email) {
       router.push('/auth/login'); // redirect if not logged in
     }
   }, [router]);
@@ -61,51 +57,24 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/logout', { method: 'POST' });
-      localStorage.removeItem('userEmail');
-      router.push('/auth/login');
-    } catch (err) {
-      console.error('Logout failed', err);
-    }
-  };
 
   return (
     <main>
       {/* Header */}
       <LoggedInHeader />
 
-      {/* Welcome Message */}
-      {/* <div className="container mx-auto px-4 py-4">
-        <h1 className="text-2xl font-bold">Welcome to the Dashboard</h1>
-        {userEmail ? (
-          <div className="mt-2">
-            <p className="text-gray-700">Logged in as: {userEmail}</p>
-            <button
-              onClick={handleLogout}
-              className="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <p>Loading user...</p>
-        )}
-      </div> */}
-
       {/* Main Layout: Categories + Hero Carousel */}
       <div className="container mx-auto px-4 py-4 flex gap-8">
         {/* Categories Sidebar */}
         <div className="hidden md:block w-64 space-y-4">
           {[
-            "Woman's Fashion",
-            "Men's Fashion",
+            "Woman&apos;s Fashion",
+            "Men&apos;s Fashion",
             'Electronics',
             'Home & Lifestyle',
             'Medicine',
             'Sports & Outdoor',
-            "Baby's & Toys",
+            "Baby&apos;s & Toys",
             'Groceries & Pets',
             'Health & Beauty',
           ].map((category) => (
@@ -113,7 +82,7 @@ export default function Home() {
               key={category}
               className="flex items-center justify-between hover:text-red-500 cursor-pointer"
             >
-              <span>{category}</span>
+              <span dangerouslySetInnerHTML={{ __html: category }} />
               <ChevronRight className="w-4 h-4" />
             </div>
           ))}
@@ -180,7 +149,7 @@ export default function Home() {
             <a href="#" className="text-white hover:underline">Shop Now</a>
           </div>
           <div className="bg-gray-900 text-white rounded-lg p-6">
-            <h3 className="text-xl font-bold mb-2">Women's Collections</h3>
+            <h3 className="text-xl font-bold mb-2">Women&apos;s Collections</h3>
             <p className="text-sm text-gray-300 mb-4">Featured woman collections that give you another vibe.</p>
             <a href="#" className="hover:underline">Shop Now</a>
           </div>

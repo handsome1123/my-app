@@ -1,10 +1,10 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import LoggedInHeader from "@/components/LoggedInHeader";
 
 export default function CartPage() {
   return (
     <main>
-      {/* LoggedInHeader */}
       <LoggedInHeader />
 
       <div className="bg-gray-100 min-h-screen py-8">
@@ -42,11 +42,13 @@ export default function CartPage() {
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0">
-                        <img
-                          className="h-full w-full object-contain rounded"
+                      <div className="h-10 w-10 flex-shrink-0 relative">
+                        <Image
+                          className="rounded object-contain"
                           src="/images/products/1.png"
                           alt="LCD Monitor"
+                          width={40}
+                          height={40}
                         />
                       </div>
                       <div className="ml-4">
@@ -79,15 +81,18 @@ export default function CartPage() {
                     <div className="text-sm text-gray-900">$ 650</div>
                   </td>
                 </tr>
+
                 {/* Item 2 */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0">
-                        <img
-                          className="h-full w-full object-contain rounded"
+                      <div className="h-10 w-10 flex-shrink-0 relative">
+                        <Image
+                          className="rounded object-contain"
                           src="/images/products/2.png"
                           alt="HI Gamepad"
+                          width={40}
+                          height={40}
                         />
                       </div>
                       <div className="ml-4">
