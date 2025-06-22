@@ -7,8 +7,8 @@ export const orders = [
         items: [
             {
                 id: 1,
-                name: 'Netting Mykonos Tunic Dress',
-                designer: 'By Milly Thomas',
+                name: 'Computer',
+                designer: 'Handsome',
                 size: 'S',
                 quantity: 1,
                 price: 1250,
@@ -26,13 +26,11 @@ export const orders = [
         items: [
             {
                 id: 2,
-                name: 'Embroidered Sequin Mini Dress',
-                designer: 'By Sonia Agrawal',
-                size: 'S',
-                quantity: 1,
+                name: 'iPhone 6s',
+                designer: 'By Pond',
                 price: 1760,
                 image: '/images/products/2.png',
-                status: 'In-Transit',
+                status: 'In-TransitP',
                 deliveryDate: '24 December 2016',
             },
         ],
@@ -45,10 +43,8 @@ export const orders = [
         items: [
             {
                 id: 3,
-                name: 'Embroidered Sequin Mini Dress',
-                designer: 'By Sonia Agrawal',
-                size: 'S',
-                quantity: 1,
+                name: 'Camera',
+                designer: 'By Arsong',
                 price: 1760,
                 image: '/images/products/3.png',
                 status: 'In-Transit',
@@ -63,10 +59,8 @@ export const orders = [
         items: [
             {
                 id: 4,
-                name: 'Embroidered Sequin Mini Dress',
-                designer: 'By Sonia Agrawal',
-                size: 'S',
-                quantity: 1,
+                name: 'Sunglass',
+                designer: 'Little M',
                 price: 1760,
                 image: '/images/products/4.png',
                 status: 'In-Transit',

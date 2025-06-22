@@ -77,7 +77,7 @@ export default function Home() {
       <LoggedInHeader />
 
       {/* Welcome Message */}
-      <div className="container mx-auto px-4 py-4">
+      {/* <div className="container mx-auto px-4 py-4">
         <h1 className="text-2xl font-bold">Welcome to the Dashboard</h1>
         {userEmail ? (
           <div className="mt-2">
@@ -92,7 +92,7 @@ export default function Home() {
         ) : (
           <p>Loading user...</p>
         )}
-      </div>
+      </div> */}
 
       {/* Main Layout: Categories + Hero Carousel */}
       <div className="container mx-auto px-4 py-4 flex gap-8">

@@ -51,7 +51,7 @@ export default function RegisterPage() {
         <div className="hidden lg:flex items-center justify-center bg-blue-100 p-8 w-1/2">
           <div className="relative w-full h-80">
             <Image
-              src="/images/login.jpg"
+              src="/images/sh_logo.jpg"
               alt="Shopping Illustration"
               fill
               className="object-cover rounded-lg shadow-lg"

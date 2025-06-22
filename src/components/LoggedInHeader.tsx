@@ -7,6 +7,16 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserCircle, faCaretDown } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+      localStorage.removeItem('userEmail');
+      // router.push('/auth/login');
+    } catch (err) {
+      console.error('Logout failed', err);
+    }
+  };
+
 const LoggedInHeader = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -27,7 +37,7 @@ const LoggedInHeader = () => {
 
         <nav className="hidden md:flex space-x-8">
           <Link href="/buyer/home" className="hover:text-red-500">Home</Link>
-          <Link href="/contact" className="hover:text-red-500">My order</Link>
+          <Link href="/buyer/orders" className="hover:text-red-500">My order</Link>
           <Link href="/about" className="hover:text-red-500">My whilst</Link>
         </nav>
 
@@ -42,7 +52,6 @@ const LoggedInHeader = () => {
           </div>
           <Link href="/wishlist" className="relative">
             <Heart className="w-6 h-6" />
-            {/* Optional: Wishlist count */}
             {/* <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">2</span> */}
           </Link>
           <Link href="/buyer/cart" className="relative">
@@ -86,7 +95,7 @@ const LoggedInHeader = () => {
                 <Link href="/">
                   <div className="border-t border-gray-200">
                     <button
-                      onClick={() => alert("Logout functionality")}
+                      onClick={handleLogout}
                       className="block w-full py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 text-left"
                     >
                       Logout

@@ -89,8 +89,6 @@ export default function CheckoutPage() {
             <div className="text-sm text-gray-600 space-y-1">
               <p>Category: <span className="font-medium">{product.category ?? "General"}</span></p>
               <p>Seller: <span className="font-medium">{product.seller ?? "Unknown"}</span></p>
-              <p>Pickup Location: <span className="font-medium">MFU Canteen</span></p>
-              <p>Pickup Date: <span className="font-medium">{new Date().toLocaleDateString()}</span></p>
             </div>
 
             <div className="mt-6">

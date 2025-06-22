@@ -2,11 +2,27 @@
 import { orders } from "@/data/orders";
 import LoggedInHeader from "@/components/LoggedInHeader";
 
+interface Order {
+  orderId: string;
+  orderDate: string;
+  items: {
+    id: string;
+    image: string;
+    name: string;
+    designer: string;
+    size: string;
+    quantity: number;
+    price: number;
+    status: string;
+    deliveryDate: string;
+  }[];
+  paymentLastDigits: string;
+  totalAmount: number;
+}
 
-
-const OrderCard = ({ order }) => {
-  const handleTrackOrder = () => {
-    alert(`Simulating tracking order: ${order.orderId}`);
+const OrderCard = ({ order }: { order: Order }) => {
+  const ReceivedOrder = () => {
+    alert(`Thank you for purchase: ${order.orderId}`);
     console.log(`Tracking order: ${order.orderId}`);
     // In a real application, you would likely navigate to a tracking page
   };
@@ -30,10 +46,10 @@ const OrderCard = ({ order }) => {
           <p className="text-gray-500 text-xs">Order Placed: {order.orderDate}</p>
         </div>
         <button
-          onClick={handleTrackOrder}
-          className="bg-orange-500 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-md text-xs focus:outline-none focus:shadow-outline-orange"
+          onClick={ReceivedOrder}
+          className="bg-orange-500 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md text-xs focus:outline-none focus:shadow-outline-orange"
         >
-          Track Order
+          Received Order
         </button>
       </div>
 
@@ -45,24 +61,21 @@ const OrderCard = ({ order }) => {
           <div className="flex-grow">
             <h3 className="text-sm font-semibold text-gray-800">{item.name}</h3>
             <p className="text-gray-600 text-xs">{item.designer}</p>
-            <p className="text-gray-600 text-xs">Size: {item.size}, Qty: {item.quantity}, Rs. {item.price}</p>
+            <p className="text-gray-600 text-xs">Rs. {item.price}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-700">Status: <span className="text-green-500 font-semibold">{item.status}</span></p>
             <p className="text-sm text-gray-700">Delivery Expected by: <span className="font-semibold">{item.deliveryDate}</span></p>
           </div>
         </div>
       ))}
 
-      <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center justify-between mt-8">
         <button
           onClick={handleCancelOrder}
           className="text-red-500 hover:underline text-xs font-semibold focus:outline-none"
         >
-          X CANCEL ORDER
+        CANCEL ORDER
         </button>
-        <p className="text-gray-600 text-xs">Paid using credit card ending with {order.paymentLastDigits}</p>
-        <p className="text-lg font-semibold text-gray-900">Rs. {order.totalAmount}</p>
       </div>
     </div>
   );
