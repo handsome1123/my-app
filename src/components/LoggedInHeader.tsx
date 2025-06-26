@@ -33,6 +33,8 @@ const LoggedInHeader = () => {
             src="/images/sh_logo.jpg"
             alt="Logo"
             className="h-15 w-auto"
+            width={100}
+            height={100}
           />
         </Link>
 
