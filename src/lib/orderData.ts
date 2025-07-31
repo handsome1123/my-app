@@ -1,0 +1,52 @@
+import Product from "@/models/Product";
+
+export const mockOrders = [
+    {
+        id: '01',
+        productId: 'p1',
+        sellerId: '1',
+        buyerEmail: 'buyer@example.com',
+        productName: 'Used iPhone 11',
+        imageUrl: 'https://via.placeholder.com/600x400',
+        price: 300,
+        Address: 'Lamduan - 7, MFU',
+        status: 'Pending',
+        orderDate: '2025-07-03',
+    },
+    {
+        id: '02',
+        productId: 'p2',
+        sellerId: '1',
+        buyerEmail: 'buyer@example.com',
+        productName: 'Laptop ASUS',
+        imageUrl: 'https://via.placeholder.com/600x400',
+        price: 300,
+        Address: 'Lamduan - 7, MFU',
+        status: 'Shipped',
+        orderDate: '2025-07-03',
+    },
+        {
+        id: '03',
+        productId: 'p1',
+        sellerId: '2',
+        buyerEmail: 'buyer@example.com',
+        productName: 'Used iPhone 11',
+        imageUrl: 'https://via.placeholder.com/600x400',
+        price: 300,
+        Address: 'Lamduan - 7, MFU',
+        status: 'Pending',
+        orderDate: '2025-07-03',
+    },
+    {
+        id: '04',
+        productId: 'p2',
+        sellerId: '1',
+        buyerEmail: 'buyer@example.com',
+        productName: 'Laptop ASUS',
+        imageUrl: 'https://via.placeholder.com/600x400',
+        price: 300,
+        Address: 'Lamduan - 7, MFU',
+        status: 'Shipped',
+        orderDate: '2025-07-03',
+    }
+]
