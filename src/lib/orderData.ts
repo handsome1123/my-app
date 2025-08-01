@@ -1,5 +1,3 @@
-import Product from "@/models/Product";
-
 export const mockOrders = [
     {
         id: '01',

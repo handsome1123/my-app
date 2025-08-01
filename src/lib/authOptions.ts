@@ -4,12 +4,8 @@ import { AuthOptions } from 'next-auth';
 import { JWT } from 'next-auth/jwt';
 import { Session, User as NextAuthUser } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import dbConnect from './mongoose';
-import User from '@/models/User';
 import bcrypt from 'bcryptjs';
-import { mock } from 'node:test';
 import { mockUser } from '@/lib/userData';
-import { use } from 'react';
 
 export const authOptions: AuthOptions = {
   session: { strategy: 'jwt' },

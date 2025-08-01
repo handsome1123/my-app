@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { mockProducts } from '@/lib/mockData';
@@ -17,7 +17,6 @@ type Product = {
 
 export default function AdminProductsPage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,7 +75,7 @@ export default function AdminProductsPage() {
               className="border rounded-xl p-4 shadow-sm hover:shadow-lg transition relative flex flex-col"
             >
               {product.imageUrl && (
-                <img
+                <Image
                   src={product.imageUrl}
                   alt={product.name}
                   className="w-full h-40 object-cover rounded-md mb-4"

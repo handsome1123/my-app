@@ -18,7 +18,6 @@ export default function SellerProductsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [products, setProducts] = useState<Product[]>([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState<number | ''>('');
   const [imageUrl, setImageUrl] = useState('');
@@ -155,7 +154,7 @@ export default function SellerProductsPage() {
             {sellerProducts.map((product) => (
               <li key={product._id} className="border rounded-lg p-4 shadow-sm bg-white relative">
                 {product.imageUrl && (
-                  <img
+                  <Image
                     src={product.imageUrl}
                     alt={product.name}
                     className="h-40 w-full object-cover rounded-md mb-3"

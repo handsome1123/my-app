@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
+import Image from 'next/image';
 import { mockOrders } from '@/lib/orderData';
 
 export default function SellerOrdersPage() {
@@ -11,7 +11,7 @@ export default function SellerOrdersPage() {
   const router = useRouter();
 
   const sellerId = session?.user?.id;
-  const [orders, setOrders] = useState(() =>
+  const [orders] = useState(() =>
     mockOrders.filter((o) => o.sellerId === sellerId)
   );
 
@@ -46,7 +46,7 @@ export default function SellerOrdersPage() {
             >
               <div className="flex items-center gap-6">
                 {order.imageUrl && (
-                  <img
+                  <Image
                     src={order.imageUrl}
                     alt={order.productName}
                     className="w-32 h-32 rounded-lg object-cover flex-shrink-0 border border-gray-200"

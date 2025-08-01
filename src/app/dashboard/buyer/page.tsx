@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
+import Image from 'next/image';
 import { LogoutButton } from '@/components/LogoutButton';
 import Link from 'next/link';
 import { mockProducts } from '@/lib/mockData';
@@ -98,9 +98,11 @@ export default function BuyerDashboard() {
               whileTap={{ scale: 0.97 }}
               className="bg-white p-4 rounded-xl shadow-md hover:shadow-xl transition cursor-pointer"
             >
-              <img
+              <Image
                 src={product.imageUrl}
                 alt={product.name}
+                width={60}
+                height={60}
                 className="h-40 w-full object-cover rounded mb-3"
               />
               <h2 className="text-lg font-semibold text-gray-800 truncate">{product.name}</h2>

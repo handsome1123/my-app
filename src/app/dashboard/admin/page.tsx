@@ -1,7 +1,6 @@
 'use client';
 
 import { useAdminOnly } from '@/lib/hooks/useAdminOnly';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { LogoutButton } from '@/components/LogoutButton';
 import Link from 'next/link';

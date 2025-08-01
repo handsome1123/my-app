@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { mockProducts } from '@/lib/mockData';
 import { BuyNowButton } from '@/components/BuyNowButton';
+import Image from 'next/image';
 
 type PageProps = {
   params: {
@@ -18,7 +19,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-6 p-8">
         {/* Product Image */}
         <div>
-          <img
+          <Image
             src={product.imageUrl}
             alt={product.name}
             className="rounded-xl w-full h-96 object-cover shadow"
