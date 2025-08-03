@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "^6.13.0",
     "@uploadthing/react": "^7.3.2",
     "bcryptjs": "^3.0.2",
     "framer-motion": "^12.23.5",
@@ -17,10 +18,10 @@
     "mongoose": "^8.16.1",
     "next": "15.3.4",
     "next-auth": "^4.24.11",
-    "qrcode": "^1.5.4",
-    "qrcode.react": "^4.2.0",
+    "nodemailer": "^6.10.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "twilio": "^5.8.0",
     "uploadthing": "^7.7.3"
   },
   "devDependencies": {
@@ -29,6 +30,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
+    "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

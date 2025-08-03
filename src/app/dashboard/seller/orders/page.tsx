@@ -4,23 +4,48 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { mockOrders } from '@/lib/orderData';
+
+type Order = {
+  _id: string;
+  productName: string;
+  buyerEmail: string;
+  price: number;
+  status: string;
+  orderDate: string;
+  imageUrl?: string;
+};
 
 export default function SellerOrdersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   const sellerId = session?.user?.id;
-  const [orders] = useState(() =>
-    mockOrders.filter((o) => o.sellerId === sellerId)
-  );
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
     else if (session?.user.role !== 'seller') router.push('/');
   }, [session, status, router]);
 
-  if (status === 'loading') return <p>Loading...</p>;
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!sellerId) return;
+      
+      try {
+        // For now, we'll show an empty state since we haven't implemented orders yet
+        setOrders([]);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [sellerId]);
+
+  if (status === 'loading' || loading) return <p>Loading...</p>;
   if (!session || session.user.role !== 'seller') return null;
 
   return (
@@ -41,7 +66,7 @@ export default function SellerOrdersPage() {
         <ul className="space-y-8">
           {orders.map((order) => (
             <li
-              key={order.id}
+              key={order._id}
               className="bg-white rounded-xl shadow-md p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6 hover:shadow-lg transition"
             >
               <div className="flex items-center gap-6">

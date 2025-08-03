@@ -4,10 +4,8 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-import { mockUser } from '@/lib/userData';
-
 type User = {
-  id: string;
+  _id: string;
   email: string;
   role: string;
 };
@@ -17,12 +15,27 @@ export default function AdminUsersPage() {
 
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setUsers(mockUser);
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch('/api/users');
+        const data = await res.json();
+        if (data.success) {
+          setUsers(data.users);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
   }, []);
 
-  if (status === 'loading') return <p className="text-center py-10">Loading...</p>;
+  if (status === 'loading' || loading) return <p className="text-center py-10">Loading...</p>;
   if (!session || session.user.role !== 'admin') return null;
 
   const filteredUsers = users.filter(user =>
@@ -55,10 +68,10 @@ export default function AdminUsersPage() {
             <ul className="space-y-6">
               {filteredUsers.map(user => (
                 <li
-                  key={user.id}
+                  key={user._id}
                   className="flex justify-between items-center border border-gray-200 rounded-md p-4 hover:shadow-lg transition cursor-pointer"
                 >
-                  <Link href={`/dashboard/admin/user/${user.id}`} className="flex flex-col flex-1">
+                  <Link href={`/dashboard/admin/user/${user._id}`} className="flex flex-col flex-1">
                     <span className="text-lg font-semibold text-indigo-700 hover:underline">
                       {user.email}
                     </span>

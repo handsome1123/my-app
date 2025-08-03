@@ -5,13 +5,13 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ImageUpload } from '@/components/ImageUpload';
 import Image from 'next/image';
-import { mockProducts } from '@/lib/mockData';
+import { useCallback } from 'react';
 
 type Product = {
   _id: string;
   name: string;
   price: number;
-  imageUrl: string;
+  imageUrl?: string;
 };
 
 export default function SellerProductsPage() {
@@ -24,14 +24,35 @@ export default function SellerProductsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
 
   const sellerId = session?.user?.id;
-  const sellerProducts = mockProducts.filter(p => p.sellerId === sellerId && p.name.toLowerCase().includes(search.toLowerCase()));
+  const sellerProducts = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
     else if (session?.user.role !== 'seller') router.push('/');
   }, [session, status, router]);
+
+  // Fetch products
+  const fetchProducts = useCallback(async () => {
+    if (!sellerId) return;
+    
+    try {
+      const res = await fetch(`/api/products?owner=${sellerId}`);
+      const data = await res.json();
+      if (data.success) {
+        setProducts(data.products);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  }, [sellerId]);
+
+  useEffect(() => {
+    // Fetch products 
+    fetchProducts();
+  }, [fetchProducts]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,7 +76,7 @@ export default function SellerProductsPage() {
       setPrice('');
       setImageUrl('');
       setEditingId(null);
-      // fetchProducts(); // If using real API
+      fetchProducts();
     } else {
       const data = await res.json();
       alert(data.error || 'Error saving product');
@@ -67,7 +88,8 @@ export default function SellerProductsPage() {
   function handleEdit(product: Product) {
     setName(product.name);
     setPrice(product.price);
-    setImageUrl(product.imageUrl);
+    // ✅ Fixed: Handle undefined imageUrl
+    setImageUrl(product.imageUrl || '');
     setEditingId(product._id);
   }
 
@@ -75,10 +97,12 @@ export default function SellerProductsPage() {
     if (!confirm('Delete this product?')) return;
 
     const res = await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
-    if (!res.ok) {
+    if (res.ok) {
+      fetchProducts(); // Refresh products
+    } else {
       const data = await res.json();
       alert(data.error || 'Error deleting product');
-    }
+    } 
   }
 
   if (status === 'loading') return <p className="text-center mt-10">Loading...</p>;
@@ -157,6 +181,8 @@ export default function SellerProductsPage() {
                   <Image
                     src={product.imageUrl}
                     alt={product.name}
+                    width={100}
+                    height={100}
                     className="h-40 w-full object-cover rounded-md mb-3"
                   />
                 )}

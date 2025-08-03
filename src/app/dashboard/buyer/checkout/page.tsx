@@ -1,166 +1,84 @@
+// /dashboard/buyer/checkout/page.tsx
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { mockProducts } from '@/lib/mockData';
-import Image from 'next/image';
 
-// ✅ Define Product type
-type Product = {
-  _id: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-  owner?: {
-    email: string;
-  };
-};
-
-export default function CheckoutPage() {
+// Component that uses useSearchParams
+function CheckoutForm() {
   const searchParams = useSearchParams();
+  
   const productId = searchParams.get('productId');
-
-  // ✅ Use Product type instead of any
-  const [product, setProduct] = useState<Product | null>(null);
-  const [form, setForm] = useState({
-    fullName: '',
-    phone: '',
-    address: '',
-  });
-
-  useEffect(() => {
-    if (productId) {
-      const found = mockProducts.find((p) => p._id === productId);
-      setProduct(found || null);
-    }
-  }, [productId]);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleConfirm = () => {
-    if (!form.fullName || !form.phone || !form.address) {
-      alert('❗ Please fill in all fields');
-      return;
-    }
-
-    alert(
-      `✅ Purchase Successful!\n\nShipping to: ${form.fullName}, ${form.phone}\n${form.address}`
-    );
-  };
-
-  if (!product) {
-    return (
-      <main className="p-8 text-center">
-        <h1 className="text-2xl font-bold text-red-600 mb-2">
-          🚫 Product Not Found
-        </h1>
-        <p className="text-gray-500">
-          We couldn’t find the product you’re trying to purchase.
-        </p>
-      </main>
-    );
-  }
+  const quantity = searchParams.get('quantity');
+  const price = searchParams.get('price');
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-blue-50 px-6 py-10">
-      <h1 className="text-3xl font-bold text-center mb-10">🛒 Checkout</h1>
-
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10">
-        {/* LEFT: Product Summary */}
-        <div className="bg-white p-6 rounded-2xl shadow-md">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-            {product.name}
-          </h2>
-
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            width={500}
-            height={300}
-            className="w-full h-72 object-cover rounded-xl shadow mb-4"
-          />
-
-          <p className="text-lg font-semibold text-green-600 mb-2">
-            💰 ฿ {product.price}
-          </p>
-          <p className="text-sm text-gray-600 mb-6">
-            Sold by: {product.owner?.email || 'Unknown'}
-          </p>
-
-          <div className="border-t pt-4">
-            <h3 className="font-medium text-gray-700 mb-2">Scan to Pay</h3>
-            <Image
-              src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=mock-payment-url"
-              alt="QR Code"
-              width={200}
-              height={200}
-              className="w-40 h-40 rounded bg-gray-100"
-            />
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Checkout</h1>
+      
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+        
+        {productId && (
+          <div className="space-y-2 mb-6">
+            <p>Product ID: {productId}</p>
+            <p>Quantity: {quantity || 1}</p>
+            <p>Price: ${price || 'N/A'}</p>
           </div>
-        </div>
-
-        {/* RIGHT: Shipping Form */}
-        <div className="bg-white p-6 rounded-2xl shadow-md">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-            📦 Shipping Info
-          </h2>
-
+        )}
+        
+        <form>
           <div className="space-y-4">
             <div>
-              <label className="block font-medium text-gray-700 mb-1">
-                Full Name
+              <label className="block text-sm font-medium text-gray-700">
+                Shipping Address
               </label>
-              <input
-                name="fullName"
-                type="text"
-                value={form.fullName}
-                onChange={handleInputChange}
-                placeholder="Your name"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring focus:border-blue-400"
+              <textarea 
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                rows={3}
+                required
               />
             </div>
-
+            
             <div>
-              <label className="block font-medium text-gray-700 mb-1">
-                Phone Number
+              <label className="block text-sm font-medium text-gray-700">
+                Payment Method
               </label>
-              <input
-                name="phone"
-                type="tel"
-                value={form.phone}
-                onChange={handleInputChange}
-                placeholder="e.g. 099-999-9999"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring focus:border-blue-400"
-              />
+              <select className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                <option>Credit Card</option>
+                <option>PayPal</option>
+                <option>Bank Transfer</option>
+              </select>
             </div>
-
-            <div>
-              <label className="block font-medium text-gray-700 mb-1">
-                Delivery Address
-              </label>
-              <textarea
-                name="address"
-                value={form.address}
-                onChange={handleInputChange}
-                rows={4}
-                placeholder="e.g. 123 Main St, Chiang Mai, Thailand"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring focus:border-blue-400"
-              />
-            </div>
+            
+            <button 
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Place Order
+            </button>
           </div>
-
-          <button
-            onClick={handleConfirm}
-            className="mt-6 w-full bg-blue-600 text-white text-lg font-semibold py-3 rounded-lg hover:bg-blue-700 transition"
-          >
-            ✅ Confirm & Place Order
-          </button>
-        </div>
+        </form>
       </div>
-    </main>
+    </div>
+  );
+}
+
+// Loading fallback
+function CheckoutLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <span className="ml-2">Loading checkout...</span>
+    </div>
+  );
+}
+
+// Main page component
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<CheckoutLoading />}>
+      <CheckoutForm />
+    </Suspense>
   );
 }

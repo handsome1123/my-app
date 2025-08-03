@@ -40,7 +40,8 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id, name, price } = await req.json();
+  // ✅ Fixed: Extract imageUrl from request body
+  const { id, name, price, imageUrl } = await req.json();
   if (!id || !name || !price) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
@@ -57,7 +58,10 @@ export async function PUT(req: Request) {
 
   product.name = name;
   product.price = price;
-  product.imageUrl = imageUrl; // ✅ Save it
+  // ✅ Now imageUrl is defined and can be used
+  if (imageUrl !== undefined) {
+    product.imageUrl = imageUrl;
+  }
   await product.save();
 
   return NextResponse.json(product);

@@ -5,12 +5,10 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { mockProducts } from '@/lib/mockData';
-
 type Product = {
   _id: string;
   name: string;
-  imageUrl: string;
+  imageUrl?: string;
   price: number;
   owner: { email: string };
 };
@@ -20,9 +18,24 @@ export default function AdminProductsPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setProducts(mockProducts);
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        if (data.success) {
+          setProducts(data.products);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
   // Filter products by search term (name or owner email)
@@ -43,7 +56,7 @@ export default function AdminProductsPage() {
     }
   };
 
-  if (status === 'loading') return <p>Loading...</p>;
+  if (status === 'loading' || loading) return <p>Loading...</p>;
   if (!session || session.user.role !== 'admin') return null;
 
   return (

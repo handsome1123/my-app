@@ -15,7 +15,8 @@ export function ImageUpload({ onUploadComplete }: Props) {
 
   return (
     <div className="flex flex-col items-start space-y-2">
-      <UploadButton<OurFileRouter>
+      {/* ✅ Alternative 1: Use proper generic syntax with both router and endpoint */}
+      <UploadButton<OurFileRouter, keyof OurFileRouter>
         endpoint="productImage"
         onUploadBegin={() => {
           setUploading(true);
@@ -52,3 +53,40 @@ export function ImageUpload({ onUploadComplete }: Props) {
     </div>
   );
 }
+
+// ✅ Alternative 2: Manual typing approach
+/*
+export function ImageUpload({ onUploadComplete }: Props) {
+  const [uploading, setUploading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="flex flex-col items-start space-y-2">
+      <(UploadButton as any)
+        endpoint="productImage"
+        onUploadBegin={() => {
+          setUploading(true);
+          setSuccess(false);
+          setError(null);
+        }}
+        onClientUploadComplete={(res: any) => {
+          setUploading(false);
+          if (res && res.length > 0) {
+            setSuccess(true);
+            onUploadComplete(res[0].url);
+          }
+        }}
+        onUploadError={(err: Error) => {
+          setUploading(false);
+          setError(err.message || 'Upload failed');
+        }}
+        appearance={{
+          button: `bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded transition disabled:opacity-50`,
+        }}
+      />
+      // ... rest of component
+    </div>
+  );
+}
+*/

@@ -6,13 +6,12 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { LogoutButton } from '@/components/LogoutButton';
 import Link from 'next/link';
-import { mockProducts } from '@/lib/mockData';
 import { motion } from 'framer-motion';
 
 type Product = {
   _id: string;
   name: string;
-  imageUrl: string;
+  imageUrl?: string;
   price: number;
   owner: { email: string };
 };
@@ -23,6 +22,7 @@ export default function BuyerDashboard() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -34,22 +34,28 @@ export default function BuyerDashboard() {
   }, [session, status, router]);
 
   useEffect(() => {
-    // For real fetch:
-    // const fetchProducts = async () => {
-    //   const res = await fetch('/api/products');
-    //   const data = await res.json();
-    //   setProducts(data);
-    // };
-    // fetchProducts();
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        if (data.success) {
+          setProducts(data.products);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setProducts(mockProducts);
+    fetchProducts();
   }, []);
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (status === 'loading') {
+  if (status === 'loading' || loading) {
     return (
       <main className="h-screen flex items-center justify-center bg-gray-50">
         <p className="text-gray-500 text-lg animate-pulse">Loading Buyer Dashboard...</p>
@@ -98,13 +104,15 @@ export default function BuyerDashboard() {
               whileTap={{ scale: 0.97 }}
               className="bg-white p-4 rounded-xl shadow-md hover:shadow-xl transition cursor-pointer"
             >
-              <Image
-                src={product.imageUrl}
-                alt={product.name}
-                width={60}
-                height={60}
-                className="h-40 w-full object-cover rounded mb-3"
-              />
+              {product.imageUrl && (
+                <Image
+                  src={product.imageUrl}
+                  alt={product.name}
+                  width={60}
+                  height={60}
+                  className="h-40 w-full object-cover rounded mb-3"
+                />
+              )}
               <h2 className="text-lg font-semibold text-gray-800 truncate">{product.name}</h2>
               <p className="text-blue-600 font-medium mt-1 mb-1">฿ {product.price}</p>
               <p className="text-xs text-gray-400">Seller: {product.owner?.email}</p>
