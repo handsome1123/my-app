@@ -1,10 +1,28 @@
-// app/api/auth/[...nextauth]/route.ts
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
 
-import NextAuth from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+const handler = NextAuth({
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+  ],
+  secret: process.env.NEXTAUTH_SECRET,
+  callbacks: {
+    async jwt({ token, user }) {
+      // Add role to token from user (on first sign in)
+      if (user) {
+        token.role = user.role || 'buyer'; // default fallback
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Add role from token to session
+      session.user.role = token.role;
+      return session;
+    },
+  },
+});
 
-// Create a NextAuth handler using your custom authOptions
-const handler = NextAuth(authOptions);
-
-// Export it for both GET and POST methods
 export { handler as GET, handler as POST };
