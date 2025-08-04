@@ -104,9 +104,9 @@ export const authOptions: AuthOptions = {
     return session;
   },
 
-  async redirect({ url, baseUrl }) {
-    return `${baseUrl}/dashboard`; // Always go to dashboard
-  },
+  // async redirect({ baseUrl }) {
+  //   return `${baseUrl}/dashboard`; // Always go to dashboard
+  // },
 },
 
   pages: {
