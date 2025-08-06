@@ -1,28 +1,13 @@
-// import { Header } from '@/components/layout/Header';
-// import { Hero } from '@/components/home/Hero';
-// import { FeaturedProducts } from '@/components/home/FeaturedProducts';
-// import { Categories } from '@/components/home/Categories';
-// import { Newsletter } from '@/components/home/Newsletter';
-// import { Footer } from '@/components/layout/Footer';
-
-// export default function Home() {
-//   return (
-//     <div className="min-h-screen bg-background">
-//       <Header />
-//       <main>
-//         <Hero />
-//         <Categories />
-//         <FeaturedProducts />
-//         <Newsletter />
-//       </main>
-//       <Footer />
-//     </div>
-//   );
-// }
-
 'use client';
 
 import { useEffect, useState } from 'react';
+
+import { Header } from '@/components/layout/Header';
+import { Hero } from '@/components/home/Hero';
+import { FeaturedProducts } from '@/components/home/FeaturedProducts';
+import { Categories } from '@/components/home/Categories';
+import { Newsletter } from '@/components/home/Newsletter';
+import { Footer } from '@/components/layout/Footer';
 
 type Product = {
   id: number;
@@ -30,7 +15,8 @@ type Product = {
   price: number;
 };
 
-export default function HomePage() {
+export default function Home() {
+
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -56,8 +42,10 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main>
-      <h1>Product List from Supabase</h1>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main>
+              <h1>Product List from Supabase</h1>
       <ul>
         {products.map((p) => (
           <li key={p.id}>
@@ -65,6 +53,14 @@ export default function HomePage() {
           </li>
         ))}
       </ul>
-    </main>
+
+        <Hero />
+        <Categories />
+        <FeaturedProducts />
+        <Newsletter />
+      </main>
+      <Footer />
+    </div>
   );
 }
+
