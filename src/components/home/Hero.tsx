@@ -64,10 +64,13 @@ export function Hero() {
           <div className="relative">
             <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 p-8">
               <Image
-                src="https://images.pexels.com/photos/974911/pexels-photo-974911.jpeg?auto=compress&cs=tinysrgb&w=800"
-                alt="Shopping"
-                className="w-full h-full object-cover rounded-xl"
-              />
+  src="https://images.pexels.com/photos/974911/pexels-photo-974911.jpeg?auto=compress&cs=tinysrgb&w=800"
+  alt="Shopping"
+  width={300}
+  height={600}
+  className="w-full h-full object-cover rounded-xl"
+/>
+
             </div>
             
             {/* Floating cards */}
