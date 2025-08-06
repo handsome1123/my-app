@@ -15,6 +15,8 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import Image from 'next/image';
 
 export function Header() {
+  const [userName, setUserName] = useState<string | null>(null)
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { state: cartState } = useCart();
@@ -27,6 +29,16 @@ export function Header() {
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ];
+
+  
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUserName(user?.user_metadata?.name || user?.email || 'No name')
+    }
+
+    getUser()
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -90,26 +102,31 @@ export function Header() {
 
           {/* User */}
           {user ? (
-            <div className="flex items-center space-x-2">
-              <span className="hidden sm:inline text-sm">Hi, {user.name}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={logout}
-                className="text-sm"
-              >
-                Logout
-              </Button>
-            </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsAuthModalOpen(true)}
-            >
-              <User className="h-5 w-5" />
-            </Button>
-          )}
+  <div className="flex items-center space-x-2">
+    <span className="hidden sm:inline text-sm">
+      Hi, {userName}
+    </span>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={logout}
+      className="text-sm"
+    >
+      Logout
+    </Button>
+  </div>
+) : (
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={async () => {
+      await supabase.auth.signInWithOAuth({ provider: 'google' });
+    }}
+  >
+    <User className="h-5 w-5" />
+  </Button>
+)}
+
 
           {/* Mobile menu button */}
           <Button
