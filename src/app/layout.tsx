@@ -1,16 +1,31 @@
-'use client';
-
 import './globals.css';
-// import { Providers } from './providers';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import { CartProvider } from '@/contexts/CartContext';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { Toaster } from '@/components/ui/sonner';
 
-import { SessionProvider } from 'next-auth/react';
+const inter = Inter({ subsets: ['latin'] });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const metadata: Metadata = {
+  title: 'ShopNext - Premium E-commerce Store',
+  description: 'Discover amazing products at unbeatable prices',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body>
-        {/* <Providers>{children}</Providers> */}
-        <SessionProvider>{children}</SessionProvider>
+      <body className={inter.className}>
+        <AuthProvider>
+          <CartProvider>
+            {children}
+            <Toaster />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
