@@ -35,7 +35,7 @@ const featuredProducts = [
     name: 'Ceramic Coffee Mug Set',
     price: 34.99,
     originalPrice: 49.99,
-    image: 'https://images.pexels.com/photos/6347/coffee-cup-mug-white.jpg?auto=compress&cs=tinysrgb&w=400',
+    image: '/logo.jpg',
     rating: 4.7,
     reviews: 89,
   },

@@ -1,6 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabaseClient'
+
 import Link from 'next/link';
 import { ShoppingCart, Search, User, Menu, X, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';

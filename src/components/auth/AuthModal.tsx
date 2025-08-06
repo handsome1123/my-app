@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import GoogleButton from '@/components/GoogleButton'
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -70,7 +71,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Welcome to ShopNext</DialogTitle>
+          <DialogTitle>Welcome to SecondHand</DialogTitle>
         </DialogHeader>
         
         <Tabs defaultValue="login" className="w-full">
@@ -80,6 +81,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </TabsList>
           
           <TabsContent value="login">
+            <div className="flex items-center justify-center">
+      <GoogleButton />
+    </div>
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <Label htmlFor="login-email">Email</Label>
