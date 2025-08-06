@@ -23,7 +23,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
 
 type Product = {
   id: number;
@@ -36,12 +35,21 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data, error } = await supabase.from('products').select('*');
-      if (error) {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/products?select=*`, {
+        headers: {
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+        },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
         console.error('Error fetching products:', error);
-      } else {
-        setProducts(data as Product[]);
+        return;
       }
+
+      const data = await res.json();
+      setProducts(data);
     };
 
     fetchProducts();
@@ -60,5 +68,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-
