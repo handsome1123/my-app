@@ -1,0 +1,31 @@
+/* Use Tailwind yellow-500 color (#eab308) for pagination bullets */
+.swiper-pagination-bullet {
+  background-color: #eab308 !important; /* yellow-500 */
+  opacity: 0.6;
+  width: 10px;
+  height: 10px;
+  margin: 0 6px !important;
+  transition: background-color 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: #eab308 !important;
+  opacity: 1;
+}
+
+/* Make arrows bigger and yellow-500 */
+.swiper-button-next,
+.swiper-button-prev {
+  color: #eab308 !important;
+  width: 5px;
+  height: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
+  transition: color 0.3s ease;
+}
+
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  color: #ca8a04 !important; /* yellow-600 for hover */
+}

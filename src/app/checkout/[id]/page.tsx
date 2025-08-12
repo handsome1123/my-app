@@ -3,12 +3,15 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface Product {
   id: string;
-  title: string;
+  name: string;
   price: number;
   seller_id: string;
+  description?: string;
+  images?: { image_url: string; is_primary: boolean }[];
 }
 
 export default function CheckoutPage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,32 +19,53 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   const [userId, setUserId] = useState<string | null>(null);
   const [address, setAddress] = useState('');
   const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
       const { id } = await params;
 
+      // Fetch user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/login');
-        return;
+      if (user) {
+        setUserId(user.id);
+        // Note: removed unused role fetching
       }
-      setUserId(user.id);
 
-      const { data } = await supabase
+      // Fetch product + images
+      const { data: productData, error: productError } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          id,
+          name,
+          price,
+          description,
+          seller_id,
+          images:product_images(image_url, is_primary)
+        `)
         .eq('id', id)
         .single();
 
-      setProduct(data || null);
+      if(productError) {
+        console.error('Product fetch error:', productError.message);
+        setProduct(null)
+      } else {
+        setProduct(productData);
+      }
+      setLoading(false);
     };
 
     fetchData();
   }, [params, router]);
 
-  if (!product) return <p>Loading...</p>;
+  if (loading) return <p>Loading...</p>;
+  if (!product) return <p>Product not found</p>;
+
+  const primaryImage =
+    product.images?.find((img) => img.is_primary)?.image_url ||
+    product.images?.[0]?.image_url ||
+    '/placeholder.jpg';
 
   const handleConfirm = async () => {
     if (!userId) return alert('Login required');
@@ -85,7 +109,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   return (
     <div className="p-4 max-w-md mx-auto">
       <h1 className="text-xl font-bold mb-4">Checkout</h1>
-      <p><strong>Product:</strong> {product.title}</p>
+      <p><strong>Product:</strong> {product.name}</p>
+      <div className="w-full h-56 relative overflow-hidden">
+        <Image
+          src={primaryImage}
+          alt={product.name}
+          fill
+          className="object-cover"
+          priority
+        />
+      </div>
       <p><strong>Price:</strong> ${product.price}</p>
 
       <div className="mt-4">

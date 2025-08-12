@@ -42,7 +42,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   signInWithGoogle: async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/` },
+      // options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (error) return { error: error.message };
     return {};

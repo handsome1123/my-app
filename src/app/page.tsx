@@ -3,10 +3,19 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import ImageCarousel from '@/components/ImageCarousel'
 
 export default function HomePage() {
   const [email, setEmail] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+
+  
+  const bannerImages = [
+    '/banner/1.jpg',
+    '/banner/2.jpg',
+    '/banner/3.jpg',
+    '/banner/4.jpg',
+  ];
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -30,10 +39,14 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-16">
-        <div className="text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+
+        <h1 className="text-center text-4xl md:text-6xl font-bold text-gray-900 mb-6">
             Welcome to <span className="text-yellow-500">MFU SecondHand</span>
-          </h1>
+        </h1>
+
+        <ImageCarousel images={bannerImages} /> 
+
+        <div className="p-6 text-center">
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Your premier marketplace for buying and selling products. 
             Discover amazing deals or start selling your items today.
@@ -48,7 +61,7 @@ export default function HomePage() {
             </Link>
             {role === 'seller' && (
               <Link 
-                href="/dashboard/seller" 
+                href="/seller/dashboard" 
                 className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
               >
                 Seller Dashboard
@@ -56,7 +69,7 @@ export default function HomePage() {
             )}
             {role === 'admin' && (
               <Link 
-                href="/dashboard/admin" 
+                href="/admin/dashboard" 
                 className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
               >
                 Admin Dashboard
