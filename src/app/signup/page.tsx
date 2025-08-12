@@ -8,7 +8,6 @@ import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuthStore } from '@/lib/auth-store';
 
@@ -58,133 +57,147 @@ export default function SignupPage() {
   };
 
   return (
-     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl rounded-xl overflow-hidden animate-fade-in">
-        <CardHeader className="space-y-1 p-6 sm:p-8">
-          <CardTitle className="text-2xl sm:text-3xl font-bold text-center">
-            Create your account
-          </CardTitle>
-          <CardDescription className="text-center text-sm sm:text-base">
-            Register with your Lamduan email address
-          </CardDescription>
-        </CardHeader>
+  <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 animate-gradient-x flex items-center justify-center p-4">
+    <div className="max-w-4xl w-full bg-white rounded-2xl overflow-hidden flex flex-col md:flex-row animate-fade-in">
+      
+      {/* Left Image */}
+      <div className="md:w-1/2 relative h-48 md:h-auto">
+        <Image
+          src="/mfu.jpg"
+          alt="Campus"
+          fill
+          className="object-cover"
+          priority
+        />
+      </div>
 
-        <CardContent className="space-y-5 p-6 sm:p-8">
-          {/* Google Button */}
-          <Button
-            variant="outline"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-            className="w-full"
-          >
-              <Image
-    src="/Google-Logo.png" 
-    alt="Google"
-    className="w-5 h-5 mr-2"
-  />
-            Continue with Google
+      {/* Right Content */}
+      <div className="w-full md:w-1/2 flex flex-col p-8">
+        
+        {/* Header */}
+        <div className="mb-6 text-center md:text-left">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-yellow-500">Create your account</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Sign up to get started with your MFU portal
+          </p>
+        </div>
+
+        {/* Google Sign-In */}
+        <Button
+          variant="outline"
+          onClick={handleGoogleSignIn}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center border-gray-300 hover:bg-gray-50"
+        >
+          <Image
+            src="/Google-Logo.png"
+            alt="Google"
+            width={18}
+            height={18}
+            className="mr-2"
+          />
+          Continue with Google
+        </Button>
+
+        {/* Separator */}
+        <div className="flex items-center my-6">
+          <Separator className="flex-1" />
+          <span className="px-3 text-xs text-gray-500 uppercase">Or</span>
+          <Separator className="flex-1" />
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4 flex-1">
+          {/* Email */}
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your Lamduan email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Password */}
+          <div>
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10 pr-10"
+                required
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          {error && (
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="text-sm text-green-600 bg-green-50 p-3 rounded-md">
+              {success}
+            </div>
+          )}
+
+          {/* Submit */}
+          <Button type="submit" className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-lg transition" disabled={isLoading}>
+            {isLoading && (
+              <div className="h-4 w-4 animate-spin mr-2 border-t-2 border-white rounded-full" />
+            )}
+            {isLoading ? "Signing up..." : "Sign up"}
           </Button>
+        </form>
 
-          {/* Separator */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-3 text-muted-foreground">
-                Or continue with email
-              </span>
-            </div>
-          </div>
-
-          {/* Signup Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your Lamduan email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {/* Messages */}
-            {error && (
-              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="text-sm text-green-600 bg-green-50 p-3 rounded-md">
-                {success}
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <div className="h-4 w-4 animate-spin mr-2">...</div> : null}
-              {isLoading ? 'Signing up...' : 'Sign up'}
-            </Button>
-          </form>
-
-          {/* Login Link */}
-          <div className="text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
-            <Link href="/login" className="text-primary hover:underline font-medium">
-              Sign in
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Animation */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(15px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.8s ease forwards;
-        }
-      `}</style>
+        {/* Footer */}
+        <div className="p-6 text-sm text-center text-gray-600">
+          Already have an account?{" "}
+          <Link href="/login" className="text-yellow-500 hover:underline font-semibold">
+            Sign in
+          </Link>
+        </div>
+      </div>
     </div>
-  );
+
+    {/* Animation */}
+    <style jsx>{`
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.8s ease forwards;
+      }
+    `}</style>
+  </div>
+);
+
+
 }

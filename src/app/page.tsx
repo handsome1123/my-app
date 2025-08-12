@@ -32,7 +32,7 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Welcome to <span className="text-blue-600">ShopHub</span>
+            Welcome to <span className="text-yellow-500">MFU SecondHand</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Your premier marketplace for buying and selling products. 
@@ -42,14 +42,14 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link 
               href="/products" 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+              className="bg-yellow-500 hover:bg-yellow-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
             >
               Browse Products
             </Link>
             {role === 'seller' && (
               <Link 
                 href="/dashboard/seller" 
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+                className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
               >
                 Seller Dashboard
               </Link>
@@ -70,13 +70,13 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link 
                   href="/signup" 
-                  className="bg-white hover:bg-gray-50 text-blue-600 border border-blue-600 px-8 py-3 rounded-lg font-semibold transition-colors"
+                  className="bg-white hover:bg-gray-50 text-yellow-500 border border-yellow-500 px-8 py-3 rounded-lg font-semibold transition-colors"
                 >
                   Sign Up
                 </Link>
                 <Link 
                   href="/login" 
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+                  className="bg-yellow-500 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
                 >
                   Sign In
                 </Link>

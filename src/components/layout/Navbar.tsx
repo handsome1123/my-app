@@ -119,7 +119,7 @@ export default function Navbar() {
       height={40}
       priority
     />
-    <span className="text-xl font-bold text-blue-600">MFU SecondHand</span>
+    <span className="text-xl font-bold text-yellow-500">MFU SecondHand</span>
   </Link>
 </div>
 
