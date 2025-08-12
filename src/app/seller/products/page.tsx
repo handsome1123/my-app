@@ -6,9 +6,9 @@ import { supabase } from '@/lib/supabase';
 
 interface Product {
   id: string;
-  title: string;
+  name: string;    // changed from title to name
   price: number;
-  status: 'active' | 'sold';
+  status: 'active' | 'sold' | 'inactive'; // adjust as per your DB enum
 }
 
 export default function SellerProducts() {
@@ -28,11 +28,11 @@ export default function SellerProducts() {
 
       const { data, error } = await supabase
         .from('products')
-        .select('id, title, price, status')
+        .select('id, name, price, status') // changed title to name
         .eq('seller_id', userId);
 
       if (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching products:', error.message ?? error);
         setProducts([]);
       } else {
         setProducts(data || []);
@@ -43,19 +43,14 @@ export default function SellerProducts() {
     fetchProducts();
   }, []);
 
-  // Delete function
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('products').delete().eq('id', id);
 
     if (error) {
       alert('Error deleting product: ' + error.message);
     } else {
-      // Remove deleted product from state so UI updates instantly
       setProducts((prev) => prev.filter((product) => product.id !== id));
     }
   };
@@ -78,16 +73,16 @@ export default function SellerProducts() {
       <table className="w-full border-collapse border border-gray-300">
         <thead>
           <tr className="bg-gray-200">
-            <th className="border border-gray-300 p-2">Title</th>
+            <th className="border border-gray-300 p-2">Name</th>
             <th className="border border-gray-300 p-2">Price</th>
             <th className="border border-gray-300 p-2">Status</th>
             <th className="border border-gray-300 p-2">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {products.map(({ id, title, price, status }) => (
+          {products.map(({ id, name, price, status }) => (
             <tr key={id}>
-              <td className="border border-gray-300 p-2">{title}</td>
+              <td className="border border-gray-300 p-2">{name}</td>
               <td className="border border-gray-300 p-2">{price} THB</td>
               <td className="border border-gray-300 p-2 capitalize">{status}</td>
               <td className="border border-gray-300 p-2 space-x-2">
@@ -107,6 +102,13 @@ export default function SellerProducts() {
               </td>
             </tr>
           ))}
+          {products.length === 0 && (
+            <tr>
+              <td colSpan={4} className="text-center p-4 text-gray-500">
+                No products found.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </main>

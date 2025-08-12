@@ -1,34 +1,29 @@
-// src/app/seller/products/[id]/edit/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-interface Product {
-  id: string;
-  title: string;
-  price: number;
-  description: string;
-}
-
 export default function EditProduct() {
   const router = useRouter();
   const params = useParams();
   const productId = params.id as string;
 
-  const [title, setTitle] = useState('');
+  const [name, setName] = useState('');
   const [price, setPrice] = useState<number | ''>('');
   const [description, setDescription] = useState('');
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch product
+  // Fetch product & categories on mount
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
 
+      // Check auth
       const user = await supabase.auth.getUser();
       const userId = user.data.user?.id;
       if (!userId) {
@@ -37,26 +32,39 @@ export default function EditProduct() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, title, price, description, seller_id')
-        .eq('id', productId)
-        .single();
+      // Fetch categories for selector
+      const { data: cats, error: catError } = await supabase
+        .from('categories')
+        .select('id, name');
+      if (catError) {
+        setError('Failed to load categories');
+        setLoading(false);
+        return;
+      }
+      setCategories(cats || []);
 
-      if (error) {
-        setError(error.message);
+      // Fetch product data
+      const { data, error: prodError } = await supabase
+          .from('products')
+          .select('id, name, price, description, seller_id, category_id')
+          .eq('id', productId)
+          .single();
+
+      if (prodError) {
+        setError(prodError.message);
       } else if (data.seller_id !== userId) {
         setError('You do not have permission to edit this product');
       } else {
-        setTitle(data.title);
+        setName(data.name);
         setPrice(data.price);
         setDescription(data.description || '');
+        setCategoryId(data.category_id);
       }
 
       setLoading(false);
     };
 
-    fetchProduct();
+    fetchData();
   }, [productId]);
 
   // Handle update
@@ -64,17 +72,39 @@ export default function EditProduct() {
     e.preventDefault();
     setError(null);
 
-    const { error } = await supabase
+    if (!name.trim()) {
+      setError('Please enter a product name');
+      return;
+    }
+    if (!price || price <= 0) {
+      setError('Please enter a valid price');
+      return;
+    }
+    if (!categoryId) {
+      setError('Please select a category');
+      return;
+    }
+
+    const user = await supabase.auth.getUser();
+    const userId = user.data.user?.id;
+    if (!userId) {
+      setError('Not authenticated');
+      return;
+    }
+
+    const { error: updateError } = await supabase
       .from('products')
       .update({
-        title,
+        name,
         price,
         description,
+        category_id: categoryId,
       })
-      .eq('id', productId);
+      .eq('id', productId)
+      .eq('seller_id', userId); // ensure user can only update their product
 
-    if (error) {
-      setError(error.message);
+    if (updateError) {
+      setError(updateError.message);
     } else {
       router.push('/seller/products');
     }
@@ -94,14 +124,31 @@ export default function EditProduct() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block mb-1 font-semibold">Title</label>
+          <label className="block mb-1 font-semibold">Product Name</label>
           <input
             type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             required
             className="w-full border border-gray-300 p-2 rounded"
           />
+        </div>
+
+        <div>
+          <label className="block mb-1 font-semibold">Category</label>
+          <select
+            value={categoryId || ''}
+            onChange={(e) => setCategoryId(e.target.value)}
+            required
+            className="w-full border border-gray-300 p-2 rounded"
+          >
+            <option value="">Select category</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

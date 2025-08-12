@@ -58,7 +58,7 @@ export default function SellerPayments() {
       return;
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('seller_payments')
       .upsert(
         {

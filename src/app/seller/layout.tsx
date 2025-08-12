@@ -7,7 +7,6 @@ import Sidebar from '@/components/layout/Sidebar';
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -25,11 +24,10 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         .single();
 
       if (profile?.role !== 'seller') {
-        router.push('/unauthorized'); // Optional: a "Not Authorized" page
+        router.push('/'); // Redirect to home instead of unauthorized page
         return;
       }
 
-      setRole(profile.role);
       setLoading(false);
     };
 
