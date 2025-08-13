@@ -15,6 +15,7 @@ interface Product {
 }
 
 export default function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
+  
   const [product, setProduct] = useState<Product | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);

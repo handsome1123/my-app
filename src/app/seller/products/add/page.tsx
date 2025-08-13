@@ -175,7 +175,7 @@ export default function AddProduct() {
     accept="image/*"
     multiple
     onChange={(e) => setImages(e.target.files)}
-    className="w-full"
+    className="w-full bg-yellow-500 block"
   />
 </div>
         <div>
