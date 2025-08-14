@@ -1,151 +1,168 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import Image from 'next/image';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  images?: { image_url: string }[];
+}
+
+interface OrderAddress {
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  zip_code: string;
+  contact_number: string;
+}
+
+interface Buyer {
+  id: string;
+  email?: string;
+  full_name?: string;
+}
 
 interface Order {
   id: string;
-  productTitle: string;
-  buyerName: string;
-  status: 'pending' | 'confirmed' | 'rejected';
+  product_id: string;
+  buyer_id: string;
+  status: string;
+  payment_slip_url?: string;
+  created_at: string;
+  product?: Product;
+  address?: OrderAddress;
+  buyer?: Buyer;
 }
 
-export default function SellerOrders() {
-  // TODO: fetch seller orders from API/DB
-  const [orders, setOrders] = useState<Order[]>([
-    { id: '1', productTitle: 'Laptop', buyerName: 'Somchai', status: 'pending' },
-    { id: '2', productTitle: 'Table', buyerName: 'Nida', status: 'confirmed' },
-  ]);
+export default function SellerOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleConfirm = (id: string) => {
-    alert(`Confirm order ${id}`);
-    // TODO: update order status to confirmed via API
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: 'confirmed' } : o))
-    );
-  };
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
 
-  const handleReject = (id: string) => {
-    alert(`Reject order ${id}`);
-    // TODO: update order status to rejected via API
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: 'rejected' } : o))
-    );
-  };
+      // 1️⃣ Get logged-in user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
+
+      // 2️⃣ Fetch orders for this seller
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('seller_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (ordersError || !ordersData) {
+        console.error('Error fetching orders:', ordersError);
+        setLoading(false);
+        return;
+      }
+
+      // 3️⃣ Fetch related products
+      const productIds = [...new Set(ordersData.map(o => o.product_id))];
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, name, price, product_images(image_url)')
+        .in('id', productIds);
+
+      // 4️⃣ Fetch addresses
+      const orderIds = ordersData.map(o => o.id);
+      const { data: addresses } = await supabase
+        .from('order_addresses')
+        .select('*')
+        .in('order_id', orderIds);
+
+      // 5️⃣ Fetch buyers
+      const buyerIds = [...new Set(ordersData.map(o => o.buyer_id))];
+      const { data: buyers } = await supabase
+        .from('users_profiles')
+        .select('id, email, full_name')
+        .in('id', buyerIds);
+
+      // 6️⃣ Merge data
+      const ordersWithDetails = ordersData.map(order => ({
+        ...order,
+        product: products?.find(p => p.id === order.product_id) || undefined,
+        address: addresses?.find(a => a.order_id === order.id) || undefined,
+        buyer: buyers?.find(b => b.id === order.buyer_id) || undefined
+      }));
+
+      setOrders(ordersWithDetails);
+      setLoading(false);
+    };
+
+    fetchOrders();
+  }, []);
+
+  if (loading) return <p className="p-4">Loading orders...</p>;
+  if (orders.length === 0) return <p className="p-4">No orders found</p>;
 
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Orders</h1>
-
-      {/* Desktop Table */}
-      <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-100 text-gray-700">
-              <th className="p-3 border border-gray-300">Product</th>
-              <th className="p-3 border border-gray-300">Buyer</th>
-              <th className="p-3 border border-gray-300">Status</th>
-              <th className="p-3 border border-gray-300">Actions</th>
+    <div className="p-4 max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Seller Orders</h1>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-300">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="p-2 border">Order ID</th>
+              <th className="p-2 border">Product</th>
+              <th className="p-2 border">Buyer</th>
+              <th className="p-2 border">Address</th>
+              <th className="p-2 border">Payment Slip</th>
+              <th className="p-2 border">Status</th>
+              <th className="p-2 border">Date</th>
             </tr>
           </thead>
           <tbody>
-            {orders.length > 0 ? (
-              orders.map(({ id, productTitle, buyerName, status }) => (
-                <tr key={id} className="border-t hover:bg-gray-50">
-                  <td className="p-3 border border-gray-300">{productTitle}</td>
-                  <td className="p-3 border border-gray-300">{buyerName}</td>
-                  <td className="p-3 border border-gray-300">
-                    <span
-                      className={`px-2 py-1 text-xs rounded ${
-                        status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : status === 'confirmed'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {status}
-                    </span>
-                  </td>
-                  <td className="p-3 border border-gray-300 space-x-2">
-                    {status === 'pending' ? (
-                      <>
-                        <button
-                          onClick={() => handleConfirm(id)}
-                          className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                        >
-                          Confirm
-                        </button>
-                        <button
-                          onClick={() => handleReject(id)}
-                          className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    ) : (
-                      <span className="text-gray-500">No actions</span>
-                    )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="p-4 text-center text-gray-500">
-                  No orders found.
+            {orders.map(order => (
+              <tr key={order.id} className="border-t">
+                <td className="p-2 border text-sm">{order.id.slice(0, 8)}</td>
+                <td className="p-2 border">
+                  {order.product?.images?.[0]?.image_url && (
+                    <Image
+                      src={order.product.images[0].image_url}
+                      alt={order.product.name}
+                      width={50}
+                      height={50}
+                      className="inline-block mr-2"
+                    />
+                  )}
+                  {order.product?.name} <br />
+                  <span className="text-gray-600 text-sm">฿{order.product?.price}</span>
+                </td>
+                <td className="p-2 border">
+                  {order.buyer?.full_name || 'Unknown'} <br />
+                  <span className="text-gray-600 text-sm">{order.buyer?.email}</span>
+                </td>
+                <td className="p-2 border text-sm">
+                  {order.address?.address_line1}, {order.address?.address_line2 && `${order.address.address_line2}, `}
+                  {order.address?.city}, {order.address?.zip_code} <br />
+                  📞 {order.address?.contact_number}
+                </td>
+                <td className="p-2 border text-center">
+                  {order.payment_slip_url ? (
+                    <a href={order.payment_slip_url} target="_blank" className="text-blue-600 underline">View</a>
+                  ) : (
+                    'No slip'
+                  )}
+                </td>
+                <td className="p-2 border capitalize">{order.status}</td>
+                <td className="p-2 border text-sm">
+                  {new Date(order.created_at).toLocaleDateString()}
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>
-
-      {/* Mobile Card Layout */}
-      <div className="grid gap-4 md:hidden">
-        {orders.length > 0 ? (
-          orders.map(({ id, productTitle, buyerName, status }) => (
-            <div key={id} className="border rounded-lg p-4 shadow-sm bg-white">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h2 className="font-bold text-lg">{productTitle}</h2>
-                  <p className="text-gray-600 text-sm">Buyer: {buyerName}</p>
-                </div>
-                <span
-                  className={`px-2 py-1 text-xs rounded ${
-                    status === 'pending'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : status === 'confirmed'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}
-                >
-                  {status}
-                </span>
-              </div>
-              {status === 'pending' && (
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => handleConfirm(id)}
-                    className="flex-1 px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    onClick={() => handleReject(id)}
-                    className="flex-1 px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
-                  >
-                    Reject
-                  </button>
-                </div>
-              )}
-              {status !== 'pending' && (
-                <p className="text-gray-500 text-sm mt-2">No actions</p>
-              )}
-            </div>
-          ))
-        ) : (
-          <p className="text-center text-gray-500">No orders found.</p>
-        )}
-      </div>
-    </main>
+    </div>
   );
 }
