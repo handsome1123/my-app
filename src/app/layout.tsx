@@ -7,6 +7,9 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'MFU SecondHand',
   description: 'Discover amazing products at unbeatable prices',
+    icons: {
+    icon: "/logo.jpg", 
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
