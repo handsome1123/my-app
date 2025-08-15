@@ -48,8 +48,8 @@ export default function HomePage() {
 
         <div className="p-6 text-center">
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Your premier marketplace for buying and selling products. 
-            Discover amazing deals or start selling your items today.
+            Sell Your Items Today: Our user-friendly interface allows you to create listings in minutes. 
+            You can easily upload photos, write descriptions, and set your price to start selling your items.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">

@@ -94,7 +94,7 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
           priority
         />
       </div>
-      <p className="mb-2">Price: ${product.price}</p>
+      <p className="mb-2">Price: ฿{product.price}</p>
       <p className="mb-2">Seller ID: {product.seller_id}</p>
       <p className="mb-2">Description: {product.description}</p>
 

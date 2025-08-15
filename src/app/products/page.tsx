@@ -139,7 +139,7 @@ export default function ProductList() {
                   <div className="relative w-full h-56 overflow-hidden">
                     <Image src={imageUrl} alt={product.name} fill className="object-cover" />
                     <span className="absolute top-3 right-3 bg-pink-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow">
-                      ${product.price}
+                      ฿{product.price}
                     </span>
                   </div>
                   <div className="p-4">
