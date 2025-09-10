@@ -114,7 +114,7 @@ export default function BuyerHome() {
           {products.map((p) => (
             <div
               key={p._id}
-              className="border p-4 rounded shadow hover:shadow-md"
+              className="p-4 rounded shadow hover:shadow-md"
             >
               {p.imageUrl && (
                 <Image
