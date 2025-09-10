@@ -1,37 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { useState } from 'react';
 
-export default function Header() {
+interface HeaderProps {
+  initialRole?: 'buyer' | 'seller' | 'admin';
+  initialEmail?: string;
+}
+
+export default function Header({ initialRole = 'buyer', initialEmail = '' }: HeaderProps) {
   const router = useRouter();
-  const [role, setRole] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(initialRole);
+  const [email, setEmail] = useState<string | null>(initialEmail);
 
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      setEmail(user.email ?? null); // fallback to null if undefined
-
-
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      setRole(profile?.role || 'buyer');
-    };
-
-    fetchUserRole();
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    // Example frontend-only logout logic
+    setRole(null);
+    setEmail(null);
     router.push('/login');
   };
 

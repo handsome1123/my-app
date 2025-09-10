@@ -1,110 +1,112 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
-import ImageCarousel from '@/components/ImageCarousel'
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import ImageCarousel from "@/components/ImageCarousel";
+
+interface Product {
+  _id: string;
+  name: string;
+  description?: string;
+  price: number;
+  imageUrl?: string;
+  stock: number;
+  sellerId?: {
+    _id: string;
+    name: string;
+    email?: string;
+  };
+}
 
 export default function HomePage() {
-  const [email, setEmail] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  
-  const bannerImages = [
-    '/banner/1.jpg',
-    '/banner/2.jpg',
-    '/banner/3.jpg',
-    '/banner/4.jpg',
-  ];
+  // Static Banner Images
+  const bannerImages = ["/banner/1.jpg", "/banner/2.jpg", "/banner/3.jpg", "/banner/4.jpg"];
+
+  // Fetch all products
+  const fetchProducts = async () => {
+    try {
+      setLoadingProducts(true);
+      setError(null);
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const res = await fetch("/api/buyer/products", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setProducts(data.products || []);
+      } else {
+        setError(data.error || "Failed to fetch products");
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Error fetching products");
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUserRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      setEmail(user.email ?? null);
-
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      setRole(profile?.role || 'buyer');
-    };
-
-    fetchUserRole();
+    fetchProducts();
   }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-16">
+        {/* Image Slider - Banner */}
+        <ImageCarousel images={bannerImages} />
 
-        <h1 className="text-center text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Welcome to <span className="text-yellow-500">MFU SecondHand</span>
-        </h1>
+        {/* All Products */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">All Products</h2>
 
-        <ImageCarousel images={bannerImages} /> 
-
-        <div className="p-6 text-center">
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Sell Your Items Today: Our user-friendly interface allows you to create listings in minutes. 
-            You can easily upload photos, write descriptions, and set your price to start selling your items.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link 
-              href="/products" 
-              className="bg-yellow-500 hover:bg-yellow-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
-            >
-              Browse Products
-            </Link>
-            {role === 'seller' && (
-              <Link 
-                href="/seller/dashboard" 
-                className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
-              >
-                Seller Dashboard
-              </Link>
-            )}
-            {role === 'admin' && (
-              <Link 
-                href="/admin/dashboard" 
-                className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
-              >
-                Admin Dashboard
-              </Link>
-            )}
-          </div>
-
-          {!email && (
-            <div className="space-y-4">
-              <p className="text-gray-600">Get started by creating an account</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link 
-                  href="/signup" 
-                  className="bg-white hover:bg-gray-50 text-yellow-500 border border-yellow-500 px-8 py-3 rounded-lg font-semibold transition-colors"
-                >
-                  Sign Up
-                </Link>
-                <Link 
-                  href="/login" 
-                  className="bg-yellow-500 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
-                >
-                  Sign In
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {email && (
-            <div className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto">
-              <p className="text-gray-600 mb-2">Welcome back!</p>
-              <p className="font-semibold text-gray-900">{email}</p>
-              <p className="text-sm text-gray-500 capitalize">Role: {role}</p>
+          {loadingProducts ? (
+            <p>Loading products...</p>
+          ) : error ? (
+            <p className="text-red-500">{error}</p>
+          ) : products.length === 0 ? (
+            <p className="text-gray-600">No products available</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {products.map((p) => (
+                <div key={p._id} className="border rounded-lg shadow hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col">
+                  {p.imageUrl && (
+                    <Image
+                      src={p.imageUrl}
+                      alt={p.name}
+                      width={400}
+                      height={160}
+                      className="w-full h-48 object-cover"
+                      priority
+                    />
+                  )}
+                  <div className="p-4 flex flex-col flex-grow">
+                    <h3 className="font-semibold text-lg mb-1">{p.name}</h3>
+                    <p className="text-sm text-gray-600 flex-grow">{p.description || "No description"}</p>
+                    <div className="mt-2 flex justify-between items-center">
+                      <span className="font-bold text-yellow-600">${p.price}</span>
+                      <span className="text-sm text-gray-500">Stock: {p.stock}</span>
+                    </div>
+                    <Link
+                      href={`/buyer/products/${p._id}`}
+                      className="mt-3 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold px-4 py-2 rounded-lg text-center"
+                    >
+                      View
+                    </Link>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
+        
       </div>
     </div>
   );

@@ -1,28 +1,31 @@
-'use server';
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
 
-import { supabase } from './supabase';
-import { cookies } from 'next/headers';
+const JWT_SECRET = process.env.JWT_SECRET || "secret";
 
-export const getUserWithRole = async () => {
+export function createToken(payload: object) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+}
+
+export function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
+
+export async function setAuthCookie(token: string) {
   const cookieStore = await cookies();
-  const access_token = cookieStore.get('sb-access-token')?.value;
+  cookieStore.set("seller_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60, // 7 days
+  });
+}
 
-  if (!access_token) return null;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser(access_token);
-
-  if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  return {
-    ...user,
-    role: profile?.role || 'buyer',
-  };
-};
+export async function clearAuthCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete("seller_token");
+}

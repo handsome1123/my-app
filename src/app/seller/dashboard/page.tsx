@@ -1,89 +1,15 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 
+import { useState } from 'react';
 import { DollarSign, Package, ShoppingBag } from 'lucide-react';
 
 export default function SellerDashboardPage() {
-  const [role, setRole] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
-  const [productCount, setProductCount] = useState<number | null>(null)
+  // Mock Data (replace with API later if needed)
+  const [email] = useState<string | null>('seller@mfu.ac.th'); // Change to null for no email
+  const [role] = useState<string | null>('seller'); // "buyer" | "seller" | "admin"
+  const [productCount] = useState<number>(12); // Example count
 
-  // useEffect(() => {
-  //   const fetchUserRole = async () => {
-  //     const { data: { user } } = await supabase.auth.getUser();
-  //     if (!user) return;
-
-  //     setEmail(user.email ?? null); // fallback to null if undefined
-
-  //     const { data: profile } = await supabase
-  //       .from('user_profiles')
-  //       .select('role')
-  //       .eq('id', user.id)
-  //       .single();
-
-  //     setRole(profile?.role || 'buyer');
-  //   };
-
-  //   fetchUserRole();
-  // }, []);
-
-    // 1️⃣ Get user role + email
-  const getUserRole = async () => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError) {
-      console.error('Error fetching user:', userError.message)
-      return null
-    }
-    if (!user) return null
-
-    setEmail(user.email ?? null)
-
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError) {
-      console.error('Error fetching role:', profileError.message)
-      setRole('buyer')
-    } else {
-      setRole(profile?.role || 'buyer')
-    }
-
-    return user // return for next function if needed
-  }
-
-    // 2️⃣ Get product count
-  const getProductCount = async (userId?: string) => {
-    const query = supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true })
-
-    // Optional: limit to this seller’s products
-    if (userId) {
-      query.eq('seller_id', userId)
-    }
-
-    const { count, error } = await query
-    if (error) {
-      console.error('Error fetching product count:', error.message)
-    } else {
-      setProductCount(count ?? 0)
-    }
-  }
-
-    useEffect(() => {
-    (async () => {
-      const user = await getUserRole()
-      if (user) {
-        await getProductCount(user.id) // pass seller ID if needed
-      }
-    })()
-  }, [])
-
-    return (
+  return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8 text-center sm:text-left">
@@ -110,7 +36,7 @@ export default function SellerDashboardPage() {
             <h2 className="text-lg font-semibold text-gray-700">Total Sales Revenue</h2>
             <DollarSign className="w-8 h-8 text-green-500" />
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-3">$0.00</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-3">$1,250.00</p>
           <p className="text-xs sm:text-sm text-gray-400">Updated just now</p>
         </div>
 
@@ -120,7 +46,7 @@ export default function SellerDashboardPage() {
             <h2 className="text-lg font-semibold text-gray-700">Orders In Process</h2>
             <ShoppingBag className="w-8 h-8 text-yellow-500" />
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-3">0</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-3">3</p>
           <p className="text-xs sm:text-sm text-gray-400">Pending fulfillment</p>
         </div>
 
@@ -130,7 +56,7 @@ export default function SellerDashboardPage() {
             <h2 className="text-lg font-semibold text-gray-700">Products Listed</h2>
             <Package className="w-8 h-8 text-blue-500" />
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-3">{productCount ?? 'Loading...'}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-3">{productCount}</p>
           <p className="text-xs sm:text-sm text-gray-400">Available in store</p>
         </div>
       </section>

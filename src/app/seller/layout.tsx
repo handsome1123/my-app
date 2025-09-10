@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import Sidebar from '@/components/layout/Sidebar';
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
@@ -10,35 +9,32 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+    // 🔹 Simulate auth check (frontend only)
+    const timer = setTimeout(() => {
+      const isLoggedIn = true; // change to false to test redirect
+      const role = 'seller';   // change to "buyer" or "admin" to test
+
+      if (!isLoggedIn) {
         router.push('/login');
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.role !== 'seller') {
-        router.push('/'); // Redirect to home instead of unauthorized page
+      if (role !== 'seller') {
+        router.push('/');
         return;
       }
 
       setLoading(false);
-    };
+    }, 500);
 
-    checkAuth();
+    return () => clearTimeout(timer);
   }, [router]);
 
   if (loading) {
     return <div className="p-6">Loading...</div>;
   }
 
-    return (
+  return (
     <div className="min-h-screen flex flex-col">
       <div className="flex flex-1">
         <Sidebar role="seller" />

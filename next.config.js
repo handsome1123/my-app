@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  /* config options here */
   images: {
-    domains: ['qwbsctnnnhupthveofcu.supabase.co'],
+    domains: ["res.cloudinary.com"], // allow Cloudinary
   },
 }
 
