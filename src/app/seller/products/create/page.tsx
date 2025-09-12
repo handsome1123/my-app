@@ -28,6 +28,9 @@ export default function CreateProductPage() {
     image: null as File | null,
   });
 
+  // Commission rate (e.g., 10% = 0.10)
+  const commissionRate = 0.10; // 10%
+
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   // Fetch seller's products
@@ -164,7 +167,7 @@ export default function CreateProductPage() {
       const res = await fetch("/api/seller/products", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ฿{token}`,
         },
         body: formData,
       });
@@ -280,11 +283,17 @@ export default function CreateProductPage() {
                 />
               </div>
 
+              {/* Commission Rate Info */}
+            <p className="text-sm text-gray-500 mt-2">
+              Note: {commissionRate * 100}% commission will be deducted from each sale.
+            </p>
+
+
               {/* Price and Stock */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
-                    Price ($) *
+                    Price (฿) *
                   </label>
                   <input
                     type="number"
@@ -323,7 +332,7 @@ export default function CreateProductPage() {
                   Product Image
                 </label>
                 <div
-                  className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
+                  className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ฿{
                     dragActive
                       ? "border-blue-400 bg-blue-50"
                       : "border-gray-300 hover:border-gray-400"
@@ -458,7 +467,7 @@ export default function CreateProductPage() {
                           <p className="text-sm text-gray-500 truncate">{product.description}</p>
                         )}
                         <div className="flex items-center space-x-4 mt-1">
-                          <span className="text-sm font-semibold text-green-600">${product.price}</span>
+                          <span className="text-sm font-semibold text-green-600">฿{product.price}</span>
                           <span className="text-xs text-gray-500">Stock: {product.stock}</span>
                         </div>
                       </div>

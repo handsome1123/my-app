@@ -91,7 +91,7 @@ export default function HomePage() {
                     <h3 className="font-semibold text-lg mb-1">{p.name}</h3>
                     <p className="text-sm text-gray-600 flex-grow">{p.description || "No description"}</p>
                     <div className="mt-2 flex justify-between items-center">
-                      <span className="font-bold text-yellow-600">${p.price}</span>
+                      <span className="font-bold text-yellow-600">฿{p.price}</span>
                       <span className="text-sm text-gray-500">Stock: {p.stock}</span>
                     </div>
                     <Link

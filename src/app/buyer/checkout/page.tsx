@@ -163,6 +163,13 @@ function CheckoutContent() {
   };
 
   const handleProceedToPayment = () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+    if (!token) {
+      alert("Please login or register before making a purchase.");
+      return;
+    }
+
     // Basic form validation
     const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode',];
 
@@ -184,7 +191,6 @@ function CheckoutContent() {
   const handleProceedToSlip = () => {
     setCurrentStep('slip');
   };
-  
 
   async function handleConfirmPurchase() {
     if (!productId || !product || !paymentSlip) return;
@@ -474,7 +480,7 @@ function CheckoutContent() {
                         width={256} height={256} 
                         className="w-64 h-64 mx-auto" />
 
-                                          {paymentInfo && (
+                  {paymentInfo && (
                     <div className="mt-2 text-center text-gray-700">
                       <p>{paymentInfo.bankName}</p>
                       <p>{paymentInfo.accountNumber}</p>
