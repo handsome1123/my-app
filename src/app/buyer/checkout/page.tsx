@@ -39,6 +39,7 @@ interface CheckoutForm {
   state: string;
   zipCode: string;
   country: string;
+  paymentSlip?: string; // ✅ Cloudinary URL
 }
 
 // Loading component
@@ -78,7 +79,8 @@ function CheckoutContent() {
     city: "",
     state: "",
     zipCode: "",
-    country: ""
+    country: "",
+    paymentSlip: "" // <-- URL after upload
   });
 
   const [qrImage, setQrImage] = useState(null);
@@ -137,6 +139,14 @@ function CheckoutContent() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Optional: check file type/size
+    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
+      setError("Please select an image less than 5MB");
+      return;
+    }
+
     if (file) {
       setPaymentSlip(file);
       const reader = new FileReader();
@@ -154,8 +164,13 @@ function CheckoutContent() {
 
   const handleProceedToPayment = () => {
     // Basic form validation
-    const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
-    const isFormValid = requiredFields.every(field => formData[field as keyof CheckoutForm].trim() !== '');
+    const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode',];
+
+    const isFormValid = requiredFields.every(field => {
+      const value = formData[field as keyof CheckoutForm];
+      return typeof value === 'string' && value.trim() !== '';
+    });
+
     
     if (!isFormValid) {
       setError("Please fill in all required fields");
@@ -169,25 +184,27 @@ function CheckoutContent() {
   const handleProceedToSlip = () => {
     setCurrentStep('slip');
   };
+  
 
   async function handleConfirmPurchase() {
     if (!productId || !product || !paymentSlip) return;
-    
+
     setProcessing(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
-      
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
       // Create FormData for file upload
       const orderData = new FormData();
-      orderData.append('productId', productId);
-      orderData.append('quantity', quantity.toString());
-      orderData.append('paymentSlip', paymentSlip);
-      orderData.append('customerInfo', JSON.stringify(formData));
+      orderData.append("productId", productId);
+      orderData.append("quantity", quantity.toString());
+      orderData.append("paymentSlip", paymentSlip); // ✅ send file directly
+      orderData.append("customerInfo", JSON.stringify(formData));
 
       const res = await fetch(`/api/buyer/checkout`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`, // Only auth header
+          // DO NOT set Content-Type when sending FormData
         },
         body: orderData,
       });
@@ -198,12 +215,14 @@ function CheckoutContent() {
       } else {
         setError(data.error || "Failed to create order");
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError("Something went wrong during checkout.");
     } finally {
       setProcessing(false);
     }
   }
+
 
   const subtotal = product ? product.price * quantity : 0;
   const shipping = subtotal > 100 ? 0 : 9.99;
@@ -553,9 +572,11 @@ function CheckoutContent() {
                           <X size={16} />
                         </button>
                         <Image
-                          src={paymentSlipPreview}
+                          src={paymentSlipPreview || "/placeholder.jpg"}
                           alt="Payment Slip"
                           className="w-full max-w-md mx-auto rounded-lg"
+                          width={400}
+                          height={400}
                         />
                       </div>
                       <div className="text-center">
