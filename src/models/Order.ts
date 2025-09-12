@@ -1,33 +1,53 @@
-import mongoose, { Schema, Document, Model, Types } from "mongoose";
+import mongoose, { Schema, Document, model, models } from "mongoose";
 
 export interface IOrder extends Document {
-  product: Types.ObjectId;
-  buyer: Types.ObjectId;
+  productId: mongoose.Types.ObjectId;
+  buyerId: mongoose.Types.ObjectId;
+  sellerId: mongoose.Types.ObjectId;
   quantity: number;
-  buyerName: string;
-  buyerEmail: string;
-  buyerAddress: string;
-  buyerPhone: string;
+  totalPrice: number;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  paymentSlip?: string;
+  shippingAddress: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const OrderSchema: Schema<IOrder> = new Schema(
+const OrderSchema = new Schema<IOrder>(
   {
-    product: { type: Schema.Types.ObjectId, ref: "Product", required: true },
-    buyer: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    quantity: { type: Number, default: 1 },
-    buyerName: { type: String, required: true },
-    buyerEmail: { type: String, required: true },
-    buyerAddress: { type: String, required: true },
-    buyerPhone: { type: String, required: true },
-    status: {
-      type: String,
-      enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
-      default: "pending",
+    productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+    buyerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    sellerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    quantity: { type: Number, required: true, min: 1 },
+    totalPrice: { type: Number, required: true, min: 0 },
+    status: { 
+      type: String, 
+      enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"], 
+      default: "pending" 
+    },
+    paymentSlip: { type: String },
+    shippingAddress: {
+      firstName: { type: String, required: true },
+      lastName: { type: String, required: true },
+      email: { type: String, required: true },
+      phone: { type: String, required: true },
+      address: { type: String, required: true },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      zipCode: { type: String, required: true },
     },
   },
   { timestamps: true }
 );
 
-export const Order: Model<IOrder> =
-  mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);
+// Prevent model overwrite upon hot reload in Next.js
+export const Order = models.Order || model<IOrder>("Order", OrderSchema);

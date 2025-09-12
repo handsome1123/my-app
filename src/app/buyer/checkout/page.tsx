@@ -1,4 +1,3 @@
-// app/buyer/checkout/page.tsx
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
@@ -42,32 +41,6 @@ interface CheckoutForm {
   country: string;
 }
 
-// QR Code data based on price ranges
-const getQRCodeData = (price: number) => {
-  if (price <= 50) {
-    return {
-      qrCode: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0id2hpdGUiLz4KICA8ZyBmaWxsPSJibGFjayI+CiAgICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiLz4KICAgIDxyZWN0IHg9IjgwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiLz4KICAgIDxyZWN0IHg9IjE2MCIgeT0iMCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIi8+CiAgICA8cmVjdCB4PSIwIiB5PSI4MCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIi8+CiAgICA8cmVjdCB4PSI4MCIgeT0iODAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIvPgogICAgPHJlY3QgeD0iMTYwIiB5PSI4MCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIi8+CiAgICA8cmVjdCB4PSIwIiB5PSIxNjAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIvPgogICAgPHJlY3QgeD0iODAiIHk9IjE2MCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIi8+CiAgICA8cmVjdCB4PSIxNjAiIHk9IjE2MCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIi8+CiAgPC9nPgo8L3N2Zz4=",
-      bankName: "PromptPay",
-      accountNumber: "0xx-xxx-xxxx",
-      accountName: "Small Payment Account"
-    };
-  } else if (price <= 200) {
-    return {
-      qrCode: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0id2hpdGUiLz4KICA8ZyBmaWxsPSJibGFjayI+CiAgICA8cmVjdCB4PSIyMCIgeT0iMjAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIvPgogICAgPHJlY3QgeD0iNjAiIHk9IjIwIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiLz4KICAgIDxyZWN0IHg9IjEwMCIgeT0iMjAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIvPgogICAgPHJlY3QgeD0iMTQwIiB5PSIyMCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIi8+CiAgICA8cmVjdCB4PSIxODAiIHk9IjIwIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiLz4KICAgIDxyZWN0IHg9IjIwIiB5PSI2MCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIi8+CiAgICA8cmVjdCB4PSIxMDAiIHk9IjYwIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiLz4KICAgIDxyZWN0IHg9IjE4MCIgeT0iNjAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIvPgogIDwvZz4KPC9zdmc+",
-      bankName: "Kasikorn Bank",
-      accountNumber: "1xx-x-xxxxx-x",
-      accountName: "Medium Payment Account"
-    };
-  } else {
-    return {
-      qrCode: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0id2hpdGUiLz4KICA8ZyBmaWxsPSJibGFjayI+CiAgICA8cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIvPgogICAgPHJlY3QgeD0iMzAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiLz4KICAgIDxyZWN0IHg9IjUwIiB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIi8+CiAgICA8cmVjdCB4PSI3MCIgeT0iMTAiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIvPgogICAgPHJlY3QgeD0iOTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiLz4KICAgIDxyZWN0IHg9IjExMCIgeT0iMTAiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIvPgogICAgPHJlY3QgeD0iMTMwIiB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIi8+CiAgICA8cmVjdCB4PSIxNTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiLz4KICAgIDxyZWN0IHg9IjE3MCIgeT0iMTAiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIvPgogIDwvZz4KPC9zdmc+",
-      bankName: "SCB Bank",
-      accountNumber: "2xx-x-xxxxx-x",
-      accountName: "Premium Payment Account"
-    };
-  }
-};
-
 // Loading component
 function CheckoutLoading() {
   return (
@@ -108,6 +81,10 @@ function CheckoutContent() {
     country: ""
   });
 
+  const [qrImage, setQrImage] = useState(null);
+  const [paymentInfo, setPaymentInfo] = useState<{bankName: string, accountNumber: string, accountName: string} | null>(null);
+
+  // Fetch product
   useEffect(() => {
     async function fetchProduct() {
       if (!productId) return;
@@ -124,6 +101,31 @@ function CheckoutContent() {
     }
     fetchProduct();
   }, [productId]);
+
+  // Fetch PromptPay QR code
+  useEffect(() => {
+    async function fetchQR() {
+      if (!product || !product.price) return;
+
+      try {
+        const res = await fetch(`/api/seller/promptpay?amount=${product.price * quantity}`);
+        const data = await res.json();
+        if (res.ok || data.qrImage) {
+          setQrImage(data.qrImage);
+          setPaymentInfo({
+            bankName: data.bankName,
+            accountNumber: data.accountNumber,
+            accountName: data.accountName
+          });
+        }
+      } catch {
+        console.error("Failed to fetch QR code");
+      }
+    }
+
+    fetchQR();
+  }, [product, quantity]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -276,7 +278,6 @@ function CheckoutContent() {
     );
   }
 
-  const qrData = getQRCodeData(total);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -447,11 +448,24 @@ function CheckoutContent() {
                 
                 <div className="text-center space-y-6">
                   <div className="bg-gray-50 rounded-2xl p-8 inline-block">
-                    <Image
-                      src={qrData.qrCode} 
-                      alt="Payment QR Code" 
-                      className="w-64 h-64 mx-auto bg-white p-4 rounded-lg shadow-sm"
-                    />
+                    {qrImage ? (
+                      <div className="mt-4">
+                        <h3 className="font-semibold mb-2">Scan to Pay with PromptPay</h3>
+                        <Image src={qrImage} alt="PromptPay QR Code" 
+                        width={256} height={256} 
+                        className="w-64 h-64 mx-auto" />
+
+                                          {paymentInfo && (
+                    <div className="mt-2 text-center text-gray-700">
+                      <p>{paymentInfo.bankName}</p>
+                      <p>{paymentInfo.accountNumber}</p>
+                      <p>{paymentInfo.accountName}</p>
+                    </div>
+                  )}
+                      </div>
+                    ) : (
+                      <p>Generating QR code...</p>
+                    )}
                   </div>
                   
                   <div className="bg-blue-50 rounded-lg p-6">
@@ -459,15 +473,15 @@ function CheckoutContent() {
                     <div className="space-y-2 text-left">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Bank:</span>
-                        <span className="font-medium">{qrData.bankName}</span>
+                        <span className="font-medium"></span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Account:</span>
-                        <span className="font-medium">{qrData.accountNumber}</span>
+                        <span className="font-medium"></span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Account Name:</span>
-                        <span className="font-medium">{qrData.accountName}</span>
+                        <span className="font-medium"></span>
                       </div>
                       <div className="border-t pt-2 mt-4">
                         <div className="flex justify-between text-lg font-bold">
