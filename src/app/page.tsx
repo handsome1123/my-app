@@ -67,9 +67,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-6">
         
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4 mb-2 py-2">
           <input
             type="text"
             placeholder="Search products..."
@@ -83,7 +83,7 @@ export default function HomePage() {
         <ImageCarousel images={bannerImages} />
 
         {/* All Products */}
-        <div className="mt-12">
+        <div className="w-full max-w-7xl mx-auto rounded-xl overflow-hidden">
           <h2 className="text-2xl font-bold mb-6 text-gray-800">All Products</h2>
 
           {loadingProducts ? (
@@ -93,7 +93,7 @@ export default function HomePage() {
           ) : products.length === 0 ? (
             <p className="text-gray-600">No products available</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
               {products.map((p) => (
                 <div key={p._id} className="rounded-lg shadow hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col">
                   {p.imageUrl && (

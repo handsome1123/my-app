@@ -110,35 +110,35 @@ export default function BuyerHome() {
       ) : error ? (
         <p className="text-red-500">{error}</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {products.map((p) => (
-            <div
-              key={p._id}
-              className="p-4 rounded shadow hover:shadow-md"
-            >
-              {p.imageUrl && (
-                <Image
-                  src={p.imageUrl}
-                  alt={p.name}
-                  width={400}
-                  height={160}
-                  className="w-full h-40 object-cover mb-2 rounded"
-                />
-              )}
-              <h3 className="font-bold">{p.name}</h3>
-              <p>{p.description}</p>
-              <p className="font-semibold mt-1">${p.price}</p>
-              <p className="text-sm text-gray-500">
-                Seller: {p.sellerId?.name || "Unknown"} | Stock: {p.stock}
-              </p>
-              <Link
-                href={`/buyer/products/${p._id}`}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold px-4 py-2 rounded-lg"
-              >
-                View
-              </Link>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+              {products.map((p) => (
+                <div key={p._id} className="rounded-lg shadow hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col">
+                  {p.imageUrl && (
+                    <Image
+                      src={p.imageUrl}
+                      alt={p.name}
+                      width={400}
+                      height={160}
+                      className="w-full h-48 object-cover"
+                      priority
+                    />
+                  )}
+                  <div className="p-4 flex flex-col flex-grow">
+                    <h3 className="font-semibold text-lg mb-1">{p.name}</h3>
+                    <p className="text-sm text-gray-600 flex-grow">{p.description || "No description"}</p>
+                    <div className="mt-2 flex justify-between items-center">
+                      <span className="font-bold text-yellow-600">฿{p.price}</span>
+                      <span className="text-sm text-gray-500">Stock: {p.stock}</span>
+                    </div>
+                    <Link
+                      href={`/buyer/products/${p._id}`}
+                      className="mt-3 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold px-4 py-2 rounded-lg text-center"
+                    >
+                      View
+                    </Link>
+                  </div>
+                </div>
+              ))}
         </div>
       )}
     </div>

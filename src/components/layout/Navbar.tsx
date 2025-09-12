@@ -9,7 +9,7 @@ import { useUser } from "@/context/UserContext";
 
 const navLinks = {
   buyer: [
-    { href: "/", label: "Home" },
+    { href: "/buyer/dashboard", label: "Home" },
     { href: "/buyer/orders", label: "My Order" },
     { href: "/history", label: "History" },
     { href: "/profile", label: "Profile" },
