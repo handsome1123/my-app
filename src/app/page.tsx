@@ -24,8 +24,16 @@ export default function HomePage() {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // filters
+  const [search, setSearch] = useState("");
+
   // Static Banner Images
-  const bannerImages = ["/banner/1.jpg", "/banner/2.jpg", "/banner/3.jpg", "/banner/4.jpg"];
+  const bannerImages = [
+    "/banner/1.jpg", 
+    "/banner/2.jpg", 
+    "/banner/3.jpg", 
+    "/banner/4.jpg"
+  ];
 
   // Fetch all products
   const fetchProducts = async () => {
@@ -60,6 +68,17 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-16">
+        
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-3xl mx-auto"
+          />
+        </div>
+
         {/* Image Slider - Banner */}
         <ImageCarousel images={bannerImages} />
 

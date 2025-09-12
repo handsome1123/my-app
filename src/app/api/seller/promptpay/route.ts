@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
   // Get product price from query parameter, default to 0 if not provided
   const amount = parseFloat(searchParams.get("amount") || "0");
 
-  // Replace with your PromptPay number or e-wallet ID
-  const promptpayID = "6720628194";
+  // PromptPay number/phone number 
+  const promptpayID = "0983744826";
 
   // Generate payment payload with dynamic amount
   const payload = promptpay(promptpayID, { amount });

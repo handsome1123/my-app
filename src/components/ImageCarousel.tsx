@@ -14,7 +14,7 @@ interface ImageCarouselProps {
 
 export default function ImageCarousel({ images }: ImageCarouselProps) {
   return (
-    <div className="w-full max-w-7xl mx-auto rounded-xl overflow-hidden ">
+    <div className="w-full max-w-7xl mx-auto rounded-xl overflow-hidden">
       <Swiper
         modules={[Autoplay, Pagination, Navigation]}
         slidesPerView={1}
