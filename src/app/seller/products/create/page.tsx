@@ -167,7 +167,7 @@ export default function CreateProductPage() {
       const res = await fetch("/api/seller/products", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ฿{token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
@@ -284,7 +284,7 @@ export default function CreateProductPage() {
               </div>
 
               {/* Commission Rate Info */}
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-red-500 mt-2">
               Note: {commissionRate * 100}% commission will be deducted from each sale.
             </p>
 
