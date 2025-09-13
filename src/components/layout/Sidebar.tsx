@@ -253,7 +253,7 @@ export default function Sidebar({ role = 'buyer', userName = 'User', userAvatar 
         {/* Footer */}
         <div className="p-4 border-t border-gray-100">
           <div className="text-center text-xs text-gray-400">
-            <p>© 205 MFU 2ndhand</p>
+            <p>© 2025 MFU 2ndhand</p>
           </div>
         </div>
     </aside>

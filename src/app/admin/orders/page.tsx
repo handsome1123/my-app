@@ -94,7 +94,7 @@ function getStatusConfig(status: string) {
   }
 }
 
-export default function BuyerOrdersPage() {
+export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

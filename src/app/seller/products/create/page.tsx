@@ -332,7 +332,7 @@ export default function CreateProductPage() {
                   Product Image
                 </label>
                 <div
-                  className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ฿{
+                  className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
                     dragActive
                       ? "border-blue-400 bg-blue-50"
                       : "border-gray-300 hover:border-gray-400"
@@ -342,6 +342,7 @@ export default function CreateProductPage() {
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
                 >
+
                   <input
                     type="file"
                     accept="image/*"
