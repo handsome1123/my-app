@@ -105,7 +105,7 @@ export default function AdminOrdersPage() {
     async function fetchOrders() {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("/api/buyer/orders", {
+        const res = await fetch("/api/admin/orders", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -122,10 +122,12 @@ export default function AdminOrdersPage() {
   }, []);
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.productId.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const productName = order.productId?.name ?? "";
+  const matchesSearch = productName.toLowerCase().includes(searchTerm.toLowerCase());
+  const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+  return matchesSearch && matchesStatus;
   });
+
 
   if (loading) return <p className="text-center mt-10">Loading orders...</p>;
   if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
@@ -205,8 +207,8 @@ export default function AdminOrdersPage() {
                       <div className="flex-shrink-0">
                         <div className="w-full lg:w-32 h-32 relative rounded-xl overflow-hidden bg-gray-100">
                           <Image
-                            src={order.productId.imageUrl || "/api/placeholder/200/200"}
-                            alt={order.productId.name}
+                            src={order.productId?.imageUrl || "/api/placeholder/200/200"}
+                            alt={order.productId?.name || "Unknown product"}
                             className="w-full h-full object-cover"
                             width={100}
                             height={100}
@@ -220,16 +222,18 @@ export default function AdminOrdersPage() {
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                           <div>
                             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                              {order.productId.name}
+                              {order.productId?.name || "Unknown product"}
                             </h2>
+
                             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                               <span className="flex items-center gap-1">
                                 <Package className="h-4 w-4" />
                                 Qty: {order.quantity}
                               </span>
                               <span className="font-semibold text-gray-900">
-                                ฿{order.totalPrice.toFixed(2)}
+                                ฿{(order.totalPrice ?? 0).toFixed(2)}
                               </span>
+
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
                                 {new Date(order.createdAt).toLocaleDateString()}
@@ -254,21 +258,25 @@ export default function AdminOrdersPage() {
                             <div className="space-y-2 text-sm">
                               <div className="flex items-center gap-2">
                                 <User className="h-3 w-3 text-gray-500" />
-                                <span>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</span>
+                                <span>
+                                  {order.shippingAddress?.firstName ?? "Unknown"} {order.shippingAddress?.lastName ?? ""}
+                                </span>
                               </div>
+
                               <div className="flex items-center gap-2">
                                 <Mail className="h-3 w-3 text-gray-500" />
-                                <span>{order.shippingAddress.email}</span>
+                                <span>{order.shippingAddress?.email ?? "No email provided"}</span>
                               </div>
+
                               <div className="flex items-center gap-2">
                                 <Phone className="h-3 w-3 text-gray-500" />
-                                <span>{order.shippingAddress.phone}</span>
+                                <span>{order.shippingAddress?.phone ?? "No phone number"}</span>
                               </div>
                               <div className="flex items-start gap-2">
                                 <MapPin className="h-3 w-3 text-gray-500 mt-0.5" />
                                 <span className="leading-relaxed">
-                                  {order.shippingAddress.address}<br />
-                                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
+                                  {order.shippingAddress?.address}<br />
+                                  {order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}
                                 </span>
                               </div>
                             </div>
