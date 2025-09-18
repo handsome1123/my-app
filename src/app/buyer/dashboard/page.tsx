@@ -34,7 +34,7 @@ export default function BuyerHome() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch user profile
   useEffect(() => {
@@ -50,23 +50,49 @@ export default function BuyerHome() {
   }, []);
 
   // Fetch all products
+  // const fetchProducts = async () => {
+  //   try {
+  //     setLoadingProducts(true);
+  //     const token = localStorage.getItem("token");
+  //     const res = await fetch("/api/seller/products", {
+  //       headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //     });
+  //     const data = await res.json();
+  //     if (res.ok) setProducts(data.products || []);
+  //     else setError(data.error || "Failed to fetch products");
+  //   } catch {
+  //     setError("Error fetching products");
+  //   } finally {
+  //     setLoadingProducts(false);
+  //   }
+  // };
+
+  // Fetch product randomly + only show > 0
   const fetchProducts = async () => {
     try {
       setLoadingProducts(true);
-      const token = localStorage.getItem("token");
-      const res = await fetch("/api/seller/products", {
+      setError(null);
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch("/api/buyer/products", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+
       const data = await res.json();
-      if (res.ok) setProducts(data.products || []);
-      else setError(data.error || "Failed to fetch products");
-    } catch {
+      if (res.ok) {
+        const shuffled = data.products.sort(() => 0.5 - Math.random());
+        setProducts(shuffled.slice(0, 6)); // show 6 random ones
+      } else {
+        setError(data.error || "Failed to fetch products");
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
       setError("Error fetching products");
     } finally {
       setLoadingProducts(false);
     }
   };
-
+  
   useEffect(() => {
     fetchProducts();
   }, []);

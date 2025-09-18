@@ -18,7 +18,8 @@ import {
   CreditCard,
   ShoppingBag,
   Filter,
-  Search
+  Search,
+  X
 } from "lucide-react";
 
 interface Order {
@@ -44,6 +45,52 @@ interface Order {
     zipCode: string;
   };
   createdAt: string;
+}
+
+interface ModalProps {
+  src: string;
+  alt?: string;
+  onClose: () => void;
+  onConfirm: () => void;
+  onReject: () => void;
+}
+
+function ImageModal({ src, alt, onClose, onConfirm, onReject }: ModalProps) {
+  return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-auto py-10">
+      <div className="relative bg-white rounded-lg shadow-lg max-w-3xl w-full mx-4">
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 p-2 rounded-full bg-white shadow hover:bg-gray-100 z-10"
+        >
+          <X size={20} />
+        </button>
+        <div className="p-4 flex justify-center">
+          <Image
+            src={src}
+            alt={alt || "Payment Slip"}
+            width={800}
+            height={800}
+            className="w-full h-auto object-contain"
+          />
+        </div>
+        <div className="flex justify-center gap-4 p-4 border-t">
+          <button
+            onClick={onConfirm}
+            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            Confirm
+          </button>
+          <button
+            onClick={onReject}
+            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition"
+          >
+            Reject
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Status configuration with icons and colors
@@ -100,6 +147,9 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [modalImage, setModalImage] = useState<string | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
 
   useEffect(() => {
     async function fetchOrders() {
@@ -127,6 +177,74 @@ export default function AdminOrdersPage() {
   const matchesStatus = statusFilter === "all" || order.status === statusFilter;
   return matchesSearch && matchesStatus;
   });
+
+  // Handler to confirm payment
+  const handleConfirmPayment = async () => {
+    if (!selectedOrderId) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/orders/confirm/${selectedOrderId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o._id === selectedOrderId ? { ...o, status: "confirmed" } : o
+          )
+        );
+        alert("Payment confirmed! Order is now ready for delivery.");
+      } else {
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          data = { error: "Failed to confirm payment" };
+        }
+        alert(data.error || "Failed to confirm payment");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error confirming payment");
+    } finally {
+      setModalImage(null);
+      setSelectedOrderId(null);
+    }
+  };
+
+
+  // Handler to reject payment
+  const handleRejectPayment = async () => {
+    if (!selectedOrderId) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/orders/cancel/${selectedOrderId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o._id === selectedOrderId ? { ...o, status: "cancelled" } : o
+          )
+        );
+        alert("Payment rejected. Money returned to buyer.");
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to reject payment");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error rejecting payment");
+    } finally {
+      setModalImage(null);
+      setSelectedOrderId(null);
+    }
+  };
 
 
   if (loading) return <p className="text-center mt-10">Loading orders...</p>;
@@ -291,7 +409,12 @@ export default function AdminOrdersPage() {
                             {order.paymentSlipUrl ? (
                               <div className="space-y-3">
                                 <p className="text-sm text-green-700 font-medium">Payment slip uploaded</p>
-                                <div className="w-24 h-24 relative rounded-lg overflow-hidden bg-white border">
+                                <div
+                                  className="w-24 h-24 relative rounded-lg overflow-hidden bg-white border cursor-pointer"
+                                  onClick={() => {
+                                    setModalImage(order.paymentSlipUrl!);setSelectedOrderId(order._id);
+                                  }}
+                                >
                                   <Image
                                     src={order.paymentSlipUrl}
                                     alt="Payment Slip"
@@ -307,6 +430,19 @@ export default function AdminOrdersPage() {
                                 <span>Awaiting payment confirmation</span>
                               </div>
                             )}
+
+                            {modalImage && selectedOrderId && (
+                              <ImageModal
+                                src={modalImage}
+                                onClose={() => {
+                                  setModalImage(null);
+                                  setSelectedOrderId(null);
+                                }}
+                                onConfirm={handleConfirmPayment}
+                                onReject={handleRejectPayment}
+                              />
+                            )}
+
                           </div>
                         </div>
                       </div>

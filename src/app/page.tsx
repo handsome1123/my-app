@@ -35,21 +35,20 @@ export default function HomePage() {
     "/banner/4.jpg"
   ];
 
-  // Fetch all products
   const fetchProducts = async () => {
     try {
       setLoadingProducts(true);
       setError(null);
 
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
       const res = await fetch("/api/buyer/products", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       const data = await res.json();
       if (res.ok) {
-        setProducts(data.products || []);
+        const shuffled = data.products.sort(() => 0.5 - Math.random());
+        setProducts(shuffled.slice(0, 6)); // show 6 random ones
       } else {
         setError(data.error || "Failed to fetch products");
       }
@@ -60,6 +59,7 @@ export default function HomePage() {
       setLoadingProducts(false);
     }
   };
+
 
   useEffect(() => {
     fetchProducts();

@@ -82,7 +82,8 @@ export default function Sidebar({ role = 'buyer', userName = 'User', userAvatar 
     seller: [
       { href: '/seller/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/seller/products', label: 'Products', icon: Package },
-      { href: '/seller/orders', label: 'Orders', icon: ClipboardList, badge: 8 },
+      { href: '/seller/my-orders', label: 'My Orders', icon: ClipboardList, badge: 8 },
+      { href: '/seller/sales-orders', label: 'Sale Orders', icon: ClipboardList },
       { href: '/seller/payments', label: 'Payments', icon: CreditCard },
     ],
     buyer: [

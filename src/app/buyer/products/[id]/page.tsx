@@ -50,21 +50,24 @@ export default function ProductDetailPage() {
       } finally {
         setLoading(false);
       }
-    }
+    };
+
     if (id) fetchProduct();
+    
   }, [id]);
 
   const handleQuantityChange = (change: number) => {
-    const maxStock = product?.stockCount || 99;
-    setQuantity(Math.max(1, Math.min(maxStock, quantity + change)));
+    if (!product) return;
+    const maxStock = product.stockCount || 10; // get from table
+    setQuantity((prev) => Math.max(1, Math.min(maxStock, prev + change)));
   };
+
 
   const handleBuyNow = () => {
     if (product) {
       router.push(`/buyer/checkout?productId=${product._id}&quantity=${quantity}`);
     }
   };
-
 
   const handleBack = () => {
     router.back();
@@ -135,11 +138,36 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-grow container mx-auto px-4 py-8">
+      <div className="flex-grow container mx-auto px-2 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
           <div className="space-y-4">
-            <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-lg group">
+
+            {/* <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-lg group">
+              <Image
+                src={product.imageUrl || "/placeholder.png"}
+                alt={product.name}
+                width={500}
+                height={500}
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              {!inStock && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                  <span className="text-white text-xl font-semibold">Out of Stock</span>
+                </div>
+              )}
+              <button 
+                onClick={() => setIsFavorite(!isFavorite)}
+                className="absolute top-4 right-4 p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                <Heart 
+                  size={20} 
+                  className={isFavorite ? "fill-red-500 text-red-500" : "text-gray-600"} 
+                />
+              </button>
+            </div> */}
+
+            <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-lg group max-w-md mx-auto">
               <Image
                 src={product.imageUrl || "/placeholder.png"}
                 alt={product.name}
@@ -161,7 +189,7 @@ export default function ProductDetailPage() {
                 />
               </button>
             </div>
-            
+
             {/* Thumbnail images */}
             <div className="grid grid-cols-4 gap-2">
               {[1, 2, 3, 4].map((i) => (
@@ -240,6 +268,7 @@ export default function ProductDetailPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Quantity</h3>
               <div className="flex items-center gap-3">
+                {/* Minus Button */}
                 <button
                   onClick={() => handleQuantityChange(-1)}
                   disabled={quantity <= 1}
@@ -247,12 +276,16 @@ export default function ProductDetailPage() {
                 >
                   <Minus size={16} />
                 </button>
+
+                {/* Quantity Display */}
                 <span className="px-4 py-2 border border-gray-300 rounded-lg min-w-[60px] text-center font-medium">
                   {quantity}
                 </span>
+
+                {/* Plus Button */}
                 <button
                   onClick={() => handleQuantityChange(1)}
-                  disabled={quantity >= stockCount}
+                  disabled={quantity >= (product?.stockCount || 10)}
                   className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus size={16} />
