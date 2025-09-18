@@ -217,17 +217,17 @@ export default function ProductDetailPage() {
             {/* Price */}
             <div className="space-y-2">
               <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold text-gray-900">${product.price}</span>
+                <span className="text-4xl font-bold text-gray-900">฿{product.price}</span>
                 {product.originalPrice && product.originalPrice > product.price && (
                   <>
-                    <span className="text-xl text-gray-500 line-through">${product.originalPrice}</span>
+                    <span className="text-xl text-gray-500 line-through">฿{product.originalPrice}</span>
                     <span className="px-2 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
-                      Save ${(product.originalPrice - product.price).toFixed(2)}
+                      Save ฿{(product.originalPrice - product.price).toFixed(2)}
                     </span>
                   </>
                 )}
               </div>
-              <p className="text-sm text-gray-600">Free shipping on orders over $100</p>
+              <p className="text-sm text-gray-600">Free shipping on orders over ฿100</p>
             </div>
 
             {/* Description */}
@@ -293,7 +293,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div>
                   <p className="font-medium text-sm">Free Delivery</p>
-                  <p className="text-xs text-gray-600">Orders over $100</p>
+                  <p className="text-xs text-gray-600">Orders over ฿100</p>
                 </div>
               </div>
 

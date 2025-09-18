@@ -9,8 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { useUser } from "@/context/UserContext";
+
+
+// Continue with google 
+import { GoogleLogin } from "@react-oauth/google";
+
 
 export default function SignupPage() {
+  const { setUser } = useUser(); // ✅ add this
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,6 +25,7 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
 
   const router = useRouter();
 
@@ -106,6 +114,49 @@ export default function SignupPage() {
               Sign up to get started with your MFU portal
             </p>
           </div>
+
+          <div>
+          {/* Google button */}
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                try {
+                  const res = await fetch("/api/auth/google", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ idToken: credentialResponse.credential }),
+                  });
+
+                  const data = await res.json();
+
+                  if (res.ok) {
+                    // Store token and user data
+                    localStorage.setItem("token", data.token);
+                    localStorage.setItem("user", JSON.stringify(data.user));
+                    setUser(data.user); // ✅ now works because we imported useUser
+
+                    // Redirect based on role
+                    if (data.user.role === "buyer") {
+                      router.push("/buyer/dashboard");
+                    } else if (data.user.role === "seller") {
+                      router.push("/seller/dashboard");
+                    } else if (data.user.role === "admin") {
+                      router.push("/admin/dashboard");
+                    } else {
+                      router.push("/");
+                    }
+                  } else {
+                    setError(data.error || "Google signup failed");
+                  }
+                } catch {
+                  setError("Something went wrong with Google signup");
+                }
+              }}
+              onError={() => {
+                setError("Google signup failed. Please try again.");
+              }}
+            />
+          </div>
+
 
           {/* Separator */}
           <div className="flex items-center my-6">

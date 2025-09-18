@@ -628,7 +628,7 @@ function CheckoutContent() {
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900 text-sm">{product.name}</h3>
                   <p className="text-gray-500 text-sm mt-1">Qty: {quantity}</p>
-                  <p className="font-medium text-gray-900 mt-1">${product.price.toFixed(2)}</p>
+                  <p className="font-medium text-gray-900 mt-1">฿{product.price.toFixed(2)}</p>
                 </div>
               </div>
 
@@ -636,7 +636,7 @@ function CheckoutContent() {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>฿{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
@@ -644,12 +644,12 @@ function CheckoutContent() {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>฿{tax.toFixed(2)}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-lg font-semibold text-gray-900">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>฿{total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -659,7 +659,7 @@ function CheckoutContent() {
                 <div className="bg-blue-50 rounded-lg p-4 mb-6">
                   <div className="flex items-center gap-2 text-blue-700">
                     <QrCode size={16} />
-                    <span className="text-sm font-medium">Scan QR code to pay ${total.toFixed(2)}</span>
+                    <span className="text-sm font-medium">Scan QR code to pay ฿{total.toFixed(2)}</span>
                   </div>
                 </div>
               )}

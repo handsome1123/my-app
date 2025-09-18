@@ -7,8 +7,9 @@ const UserSchema = new Schema(
     email: { type: String, required: true, unique: true },
     phone: { type: String },
     address: { type: String },
-    password: { type: String, required: true },
+    password: { type: String, required: false }, // ✅ make optional
     role: { type: String, enum: ["buyer", "seller", "admin"], default: "buyer" },
+     provider: { type: String, enum: ["credentials", "google"], default: "credentials" },
   },
   { timestamps: true }
 );

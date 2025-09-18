@@ -6,6 +6,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useUser } from "@/context/UserContext";
 
+// Continue with google 
+import { GoogleLogin } from "@react-oauth/google";
+
 export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: '',
@@ -113,6 +116,48 @@ export default function LoginPage() {
           <h2 className="text-2xl md:text-3xl font-extrabold text-yellow-500 text-center">
             Sign in to MFU SecondHand
           </h2>
+
+      <div>
+      {/* Google button */}
+      <GoogleLogin
+        onSuccess={async (credentialResponse) => {
+          try {
+            const res = await fetch("/api/auth/google", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ idToken: credentialResponse.credential }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+              // Store token and user data (same as email/password login)
+              localStorage.setItem("token", data.token);
+              localStorage.setItem("user", JSON.stringify(data.user));
+              setUser(data.user);
+
+              // Redirect based on role
+              if (data.user.role === "buyer") {
+                router.push("/buyer/dashboard");
+              } else if (data.user.role === "seller") {
+                router.push("/seller/dashboard");
+              } else if (data.user.role === "admin") {
+                router.push("/admin/dashboard");
+              } else {
+                router.push("/");
+              }
+            } else {
+              setErrors({ submit: data.error || "Google login failed" });
+            }
+          } catch {
+            setErrors({ submit: "Something went wrong with Google login" });
+          }
+        }}
+        onError={() => {
+          setErrors({ submit: "Google login failed. Please try again." });
+        }}
+      />
+      </div>
 
           <div>
             <label
