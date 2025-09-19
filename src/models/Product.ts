@@ -1,6 +1,18 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model, models, Document } from "mongoose";
 
-const productSchema = new Schema(
+// TypeScript interface for Product
+export interface ProductDocument extends Document {
+  name: string;
+  description?: string;
+  price: number;
+  imageUrl?: string;
+  stock: number;
+  sellerId: mongoose.Schema.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const productSchema = new Schema<ProductDocument>(
   {
     name: { type: String, required: true },
     description: { type: String },
@@ -12,4 +24,4 @@ const productSchema = new Schema(
   { timestamps: true }
 );
 
-export const Product = models.Product || model("Product", productSchema);
+export const Product = models.Product || model<ProductDocument>("Product", productSchema);

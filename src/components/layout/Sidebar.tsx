@@ -16,10 +16,11 @@ import {
   Home,
   User,
   ChevronDown,
-  Settings,
-  LogOut,
-  Bell
+  // Settings,
+  // LogOut,
+  // Bell
 } from 'lucide-react';
+import LogoutButton from "@/components/LogoutButton";
 import Image from 'next/image';
 
 interface SidebarProps {
@@ -120,144 +121,145 @@ export default function Sidebar({ role = 'buyer', userName = 'User', userAvatar 
       </button>
 
       {/* Sidebar */}
-    <aside
-        className={`fixed md:static top-0 left-0 min-h-screen w-72 bg-white shadow-xl transform transition-all duration-300 ease-in-out z-40 flex flex-col
-          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
-      >
-        {/* Header */}
-        <div className={`${theme.primary} text-white p-6 relative overflow-hidden`}>
-          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-          <div className="relative z-10">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className={`w-10 h-10 ${theme.secondary} rounded-lg flex items-center justify-center`}>
-                <LayoutDashboard className={`${theme.accent} w-6 h-6`} />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold">{theme.title}</h1>
-                <p className="text-xs opacity-90 capitalize">{role} Portal</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* User Profile Section */}
-        <div className="p-4 border-b border-gray-100">
-          <div 
-            className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors duration-200"
-            onClick={() => setShowUserMenu(!showUserMenu)}
-          >
-            <div className="relative">
-              {userAvatar ? (
-                <Image
-                  src={userAvatar} 
-                  alt={userName}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className={`w-10 h-10 ${theme.primary} rounded-full flex items-center justify-center`}>
-                  <User className="w-5 h-5 text-white" />
+      <aside
+          className={`fixed md:static top-0 left-0 min-h-screen w-72 bg-white shadow-xl transform transition-all duration-300 ease-in-out z-40 flex flex-col
+            ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        >
+          {/* Header */}
+          <div className={`${theme.primary} text-white p-6 relative overflow-hidden`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+            <div className="relative z-10">
+              <div className="flex items-center space-x-3 mb-2">
+                <div className={`w-10 h-10 ${theme.secondary} rounded-lg flex items-center justify-center`}>
+                  <LayoutDashboard className={`${theme.accent} w-6 h-6`} />
                 </div>
-              )}
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                <div>
+                  <h1 className="text-lg font-bold">{theme.title}</h1>
+                  <p className="text-xs opacity-90 capitalize">{role} Portal</p>
+                </div>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="font-medium text-gray-900 text-sm">{userName}</p>
-              <p className="text-xs text-gray-500 capitalize">{role}</p>
-            </div>
-            <ChevronDown 
-              className={`w-4 h-4 text-gray-400 transform transition-transform duration-200 ${
-                showUserMenu ? 'rotate-180' : ''
-              }`} 
-            />
           </div>
 
-          {/* User Dropdown Menu */}
-          {showUserMenu && (
-            <div className="mt-2 py-2 space-y-1 animate-in slide-in-from-top-2 duration-200">
-              <Link 
-                href="/settings" 
-                className="flex items-center space-x-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                onClick={closeSidebar}
-              >
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
-              </Link>
-              <Link 
-                href="/notifications" 
-                className="flex items-center space-x-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                onClick={closeSidebar}
-              >
-                <Bell className="w-4 h-4" />
-                <span>Notifications</span>
-                <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">3</span>
-              </Link>
-              <button 
-                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                onClick={() => {
-                  // Handle logout
-                  closeSidebar();
-                }}
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Navigation Links */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {links.map((link) => {
-            const IconComponent = link.icon;
-            const isActive = isActiveLink(link.href);
-            
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`group flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 relative overflow-hidden ${
-                  isActive 
-                    ? `${theme.secondary} ${theme.accent} shadow-sm ${theme.activeHover}` 
-                    : `text-gray-600 ${theme.hover}`
-                }`}
-                onClick={closeSidebar}
-              >
-                {/* Active indicator */}
-                {isActive && (
-                  <div className={`absolute left-0 top-0 w-1 h-full ${theme.primary} rounded-r-full`}></div>
+          {/* User Profile Section */}
+          <div className="p-4 border-b border-gray-100">
+            <div 
+              className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+            >
+              <div className="relative">
+                {userAvatar ? (
+                  <Image
+                    src={userAvatar} 
+                    alt={userName}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className={`w-10 h-10 ${theme.primary} rounded-full flex items-center justify-center`}>
+                    <User className="w-5 h-5 text-white" />
+                  </div>
                 )}
-                
-                <div className={`flex-shrink-0 ${isActive ? theme.accent : 'text-gray-500'} group-hover:scale-110 transition-transform duration-200`}>
-                  <IconComponent size={20} />
-                </div>
-                
-                <span className="flex-1">{link.label}</span>
-                
-                {/* Badge */}
-                {link.badge && (
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-gray-900 text-sm">{userName}</p>
+                <p className="text-xs text-gray-500 capitalize">{role}</p>
+              </div>
+              <ChevronDown 
+                className={`w-4 h-4 text-gray-400 transform transition-transform duration-200 ${
+                  showUserMenu ? 'rotate-180' : ''
+                }`} 
+              />
+            </div>
+
+            {/* User Dropdown Menu */}
+            {/* {showUserMenu && (
+              <div className="mt-2 py-2 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                <Link 
+                  href="/settings" 
+                  className="flex items-center space-x-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                  onClick={closeSidebar}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </Link>
+                <Link 
+                  href="/notifications" 
+                  className="flex items-center space-x-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                  onClick={closeSidebar}
+                >
+                  <Bell className="w-4 h-4" />
+                  <span>Notifications</span>
+                  <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">3</span>
+                </Link>
+                <button 
+                  className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                  onClick={() => {
+                    // Handle logout
+                    closeSidebar();
+                  }}
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            )} */}
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+            {links.map((link) => {
+              const IconComponent = link.icon;
+              const isActive = isActiveLink(link.href);
+              
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`group flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 relative overflow-hidden ${
                     isActive 
-                      ? `${theme.primary} text-white` 
-                      : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {link.badge}
-                  </span>
-                )}
+                      ? `${theme.secondary} ${theme.accent} shadow-sm ${theme.activeHover}` 
+                      : `text-gray-600 ${theme.hover}`
+                  }`}
+                  onClick={closeSidebar}
+                >
+                  {/* Active indicator */}
+                  {isActive && (
+                    <div className={`absolute left-0 top-0 w-1 h-full ${theme.primary} rounded-r-full`}></div>
+                  )}
+                  
+                  <div className={`flex-shrink-0 ${isActive ? theme.accent : 'text-gray-500'} group-hover:scale-110 transition-transform duration-200`}>
+                    <IconComponent size={20} />
+                  </div>
+                  
+                  <span className="flex-1">{link.label}</span>
+                  
+                  {/* Badge */}
+                  {link.badge && (
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                      isActive 
+                        ? `${theme.primary} text-white` 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {link.badge}
+                    </span>
+                  )}
 
-                {/* Hover effect */}
-                <div className={`absolute inset-0 ${theme.secondary} opacity-0 group-hover:opacity-30 transition-opacity duration-200 rounded-xl`}></div>
-              </Link>
-            );
-          })}
-        </nav>
+                  {/* Hover effect */}
+                  <div className={`absolute inset-0 ${theme.secondary} opacity-0 group-hover:opacity-30 transition-opacity duration-200 rounded-xl`}></div>
+                </Link>
+              );
+            })}
+            <LogoutButton />
+          </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-100">
-          <div className="text-center text-xs text-gray-400">
-            <p>© 2025 MFU 2ndhand</p>
+          {/* Footer */}
+          <div className="p-4 border-t border-gray-100">
+            <div className="text-center text-xs text-gray-400">
+              <p>© 2025 MFU 2ndhand</p>
+            </div>
           </div>
-        </div>
-    </aside>
+      </aside>
 
       {/* Mobile Overlay */}
       {isOpen && (

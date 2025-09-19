@@ -1,5 +1,7 @@
 "use client";
+
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { 
   DollarSign, 
   Package, 
@@ -52,7 +54,7 @@ interface RecentOrder {
 export default function SellerHome() {
   const [profile, setProfile] = useState<SellerProfile | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [ , setRecentOrders] = useState<RecentOrder[]>([]);
+  const [  , setRecentOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -187,10 +189,12 @@ export default function SellerHome() {
                 <Calendar className="w-4 h-4 mr-2" />
                 This Month
               </button>
+              <Link href="/seller/products/create">
               <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Product
               </button>
+              </Link>
             </div>
           </div>
 
@@ -217,7 +221,7 @@ export default function SellerHome() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                  <p className="text-3xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-gray-900">฿{stats.totalRevenue.toLocaleString()}</p>
                   <div className="flex items-center mt-2">
                     {stats.revenueChange > 0 ? (
                       <ArrowUpRight className="w-4 h-4 text-green-500" />
