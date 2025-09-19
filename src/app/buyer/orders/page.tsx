@@ -105,19 +105,25 @@ export default function BuyerOrdersPage() {
 
   useEffect(() => {
     async function fetchOrders() {
-      const token = localStorage.getItem("token");
-        if (!token) {
-          router.replace("/login"); // redirect to login if not authenticated
-        }
       try {
         const token = localStorage.getItem("token");
+        if (!token) {
+          router.push("/login"); // Fixed: use push instead of replace
+          return;
+        }
+
         const res = await fetch("/api/buyer/orders", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        if (res.ok) setOrders(data.orders);
-        else setError(data.error || "Failed to fetch orders");
-      } catch {
+        
+        if (res.ok) {
+          setOrders(data.orders || []); // Added fallback for orders
+        } else {
+          setError(data.error || "Failed to fetch orders");
+        }
+      } catch (err) {
+        console.error("Failed to fetch orders:", err);
         setError("Failed to fetch orders");
       } finally {
         setLoading(false);
@@ -133,8 +139,32 @@ export default function BuyerOrdersPage() {
     return matchesSearch && matchesStatus;
   });
 
-  if (loading) return <p className="text-center mt-10">Loading orders...</p>;
-  if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center p-6 bg-white rounded-xl shadow-lg">
+          <p className="text-red-500 text-lg mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -211,11 +241,15 @@ export default function BuyerOrdersPage() {
                       <div className="flex-shrink-0">
                         <div className="w-full lg:w-32 h-32 relative rounded-xl overflow-hidden bg-gray-100">
                           <Image
-                            src={order.productId.imageUrl || "/api/placeholder/200/200"}
+                            src={order.productId.imageUrl || "/placeholder-product.jpg"}
                             alt={order.productId.name}
                             className="w-full h-full object-cover"
-                            width={100}
-                            height={100}
+                            width={128}
+                            height={128}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/placeholder-product.jpg";
+                            }}
                           />
                         </div>
                       </div>
@@ -234,7 +268,7 @@ export default function BuyerOrdersPage() {
                                 Qty: {order.quantity}
                               </span>
                               <span className="font-semibold text-gray-900">
-                                ฿{order.totalPrice.toFixed(2)}
+                                ฿{order.totalPrice.toLocaleString()}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
@@ -294,8 +328,12 @@ export default function BuyerOrdersPage() {
                                     src={order.paymentSlipUrl}
                                     alt="Payment Slip"
                                     className="w-full h-full object-cover"
-                                    width={100}
-                                    height={100}
+                                    width={96}
+                                    height={96}
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.src = "/placeholder-receipt.jpg";
+                                    }}
                                   />
                                 </div>
                               </div>
