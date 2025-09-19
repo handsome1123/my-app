@@ -40,7 +40,12 @@ export async function GET(req: Request) {
       .sort({ createdAt: -1 })
       .populate("sellerId", "name email");
 
-    return NextResponse.json({ success: true, products }, { status: 200 });
+    const count = await Product.countDocuments(filter);
+
+    return NextResponse.json(
+      { success: true, count, products },
+      { status: 200 }
+    );
   } catch (error: unknown) {
     console.error("GET /api/products error:", error);
     return NextResponse.json(
@@ -49,6 +54,7 @@ export async function GET(req: Request) {
     );
   }
 }
+
 
 // ---------------- POST ----------------
 export async function POST(req: Request) {

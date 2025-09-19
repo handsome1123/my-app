@@ -9,11 +9,14 @@ export async function GET() {
     // Fetch all users
     const users = await User.find().sort({ createdAt: -1 });
 
-    return NextResponse.json({ users });
+    // Count total number of users
+    const totalUsers = await User.countDocuments();
+
+    return NextResponse.json({ users, totalUsers });
   } catch (error) {
-    console.error("❌ Error fetching users:", error); // Fixed: Updated error message
+    console.error("❌ Error fetching users:", error);
     return NextResponse.json(
-      { error: (error as Error).message || "Failed to fetch users" }, // Fixed: Updated error message
+      { error: (error as Error).message || "Failed to fetch users" },
       { status: 500 }
     );
   }

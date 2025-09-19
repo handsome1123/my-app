@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-
 interface Order {
   _id: string;
   productId: {
@@ -28,117 +27,60 @@ interface Order {
   paymentSlipUrl?: string;
 }
 
-// Status configuration with icons and colors
-// function getStatusConfig(status: string) {
-//   switch (status) {
-//     case "pending":
-//       return { icon: Clock, color: "bg-amber-50 text-amber-700 border-amber-200" };
-//     case "confirmed":
-//       return { icon: CheckCircle, color: "bg-blue-50 text-blue-700 border-blue-200" };
-//     case "shipped":
-//       return { icon: Truck, color: "bg-purple-50 text-purple-700 border-purple-200" };
-//     case "delivered":
-//       return { icon: Home, color: "bg-green-50 text-green-700 border-green-200" };
-//     case "cancelled":
-//       return { icon: XCircle, color: "bg-red-50 text-red-700 border-red-200" };
-//     default:
-//       return { icon: Package, color: "bg-gray-50 text-gray-700 border-gray-200" };
-//   }
-// }
-
-export default function SellerSaleOrdersPage() {
+export default function SellerOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // useEffect(() => {
-  //   const fetchOrders = async () => {
-  //     try {
-  //       setLoading(true);
-  //       setError("");
-
-  //       const token = localStorage.getItem("token");
-  //       const res = await fetch("/api/seller/orders", {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-  //       const data = await res.json();
-
-  //       if (!res.ok) {
-  //         setError(data.error || "Failed to fetch orders");
-  //         setOrders([]);
-  //       } else {
-  //         // Only show orders confirmed by admin
-  //         setOrders(data.orders.filter((o: Order) => o.status !== "pending"));
-  //       }
-  //     } catch {
-  //       setError("Something went wrong");
-  //       setOrders([]);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchOrders();
-  // }, []);
-
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const token = localStorage.getItem("token");
-      const res = await fetch("/api/seller/orders", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Failed to fetch orders");
-        setOrders([]);
-      } else {
-        // Only show orders confirmed by admin
-        setOrders(data.orders.filter((o: Order) => o.status !== "pending"));
-      }
-    } catch {
-      setError("Something went wrong");
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/seller/orders", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error || "Failed to fetch orders");
+          setOrders([]);
+        } else {
+          setOrders(data.orders || []);
+        }
+      } catch {
+        setError("Something went wrong");
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchOrders();
   }, []);
 
-  const handleStartDelivery = async (orderId: string) => {
+  const handleStatusChange = async (id: string, status: string) => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`/api/seller/orders/ship/${orderId}`, {
+    const res = await fetch(`/api/orders/${id}`, {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
     });
     const data = await res.json();
     if (res.ok) {
-      alert("Delivery started!");
-      fetchOrders();
+      setOrders((prev) =>
+        prev.map((order) => (order._id === id ? { ...order, status } : order))
+      );
     } else {
-      alert(data.error);
+      alert(data.error || "Failed to update status");
     }
   };
 
-  const handleCancelOrder = async (orderId: string) => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`/api/seller/orders/cancel/${orderId}`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    if (res.ok) {
-      alert("Order cancelled and refund initiated!");
-      fetchOrders();
-    } else {
-      alert(data.error);
-    }
+  const handleRejectOrder = async (id: string) => {
+    if (!confirm("Are you sure you want to reject this order?")) return;
+    await handleStatusChange(id, "rejected");
   };
 
   if (loading) return <p className="p-4">Loading orders...</p>;
@@ -178,7 +120,7 @@ export default function SellerSaleOrdersPage() {
                     </p>
                   </td>
                   <td className="p-4">{order.quantity}</td>
-                  <td className="p-4">฿{order.totalPrice.toFixed(2)}</td>
+                  <td className="p-4">${order.totalPrice}</td>
                   <td className="p-4">
                     {order.paymentSlipUrl ? (
                       <a href={order.paymentSlipUrl} target="_blank" rel="noopener noreferrer">
@@ -197,13 +139,13 @@ export default function SellerSaleOrdersPage() {
                   <td className="p-4">
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded ${
-                        order.status === "confirmed"
-                          ? "bg-blue-100 text-blue-700"
+                        order.status === "pending"
+                          ? "bg-yellow-100 text-yellow-700"
                           : order.status === "shipped"
-                          ? "bg-purple-100 text-purple-700"
+                          ? "bg-blue-100 text-blue-700"
                           : order.status === "delivered"
                           ? "bg-green-100 text-green-700"
-                          : order.status === "cancelled"
+                          : order.status === "rejected"
                           ? "bg-red-100 text-red-700"
                           : "bg-gray-100 text-gray-700"
                       }`}
@@ -212,37 +154,37 @@ export default function SellerSaleOrdersPage() {
                     </span>
                   </td>
                   <td className="p-4 space-x-2">
-                    {order.status === "confirmed" && (
+                    {order.status === "pending" && (
                       <>
                         <button
                           className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
-                          onClick={() => handleStartDelivery(order._id)}
+                          onClick={() => handleStatusChange(order._id, "shipped")}
                         >
                           Mark Shipped
                         </button>
                         <button
                           className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md transition"
-                          onClick={() => handleCancelOrder(order._id)}
+                          onClick={() => handleRejectOrder(order._id)}
                         >
-                          Cancel
+                          Reject
                         </button>
                       </>
                     )}
-                    {/* {order.status === "shipped" && (
+                    {order.status === "shipped" && (
                       <button
                         className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md transition"
                         onClick={() => handleStatusChange(order._id, "delivered")}
                       >
                         Mark Delivered
                       </button>
-                    )} */}
+                    )}
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={8} className="text-center py-6 text-gray-500">
-                  No orders available.
+                <td colSpan={7} className="text-center py-6 text-gray-500">
+                  No orders found.
                 </td>
               </tr>
             )}

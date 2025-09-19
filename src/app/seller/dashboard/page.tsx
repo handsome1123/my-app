@@ -52,7 +52,7 @@ interface RecentOrder {
 export default function SellerHome() {
   const [profile, setProfile] = useState<SellerProfile | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [ , setRecentOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -64,112 +64,89 @@ export default function SellerHome() {
       return;
     }
 
-    // Fetch all dashboard data
-    Promise.all([
-      fetch("/api/seller/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-      fetch("/api/seller/stats", {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-      fetch("/api/seller/recent-orders", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    ])
-      .then(async ([profileRes, statsRes, ordersRes]) => {
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const fetchProfile = fetch("/api/seller/profile", { headers });
+    const fetchProducts = fetch("/api/seller/products", { headers });
+    const fetchOrders = fetch("/api/seller/orders", { headers });
+
+    Promise.all([fetchProfile, fetchProducts, fetchOrders])
+      .then(async ([profileRes, productsRes, ordersRes]) => {
+        // Profile
         if (profileRes.ok) {
           const profileData = await profileRes.json();
           setProfile(profileData);
         }
-        
-        // Mock data for demonstration since API might not exist yet
-        if (!statsRes.ok) {
-          // Simulate stats data
-          setStats({
-            totalRevenue: 12450.75,
-            totalProducts: 24,
-            totalOrders: 89,
-            pendingOrders: 5,
-            monthlyRevenue: 3240.50,
-            revenueChange: 12.5,
-            ordersChange: -2.3,
-            lowStockProducts: 3
-          });
-        } else {
-          const statsData = await statsRes.json();
-          setStats(statsData);
+
+        // Products -> only use count
+        let totalProducts = 0;
+        if (productsRes.ok) {
+          const productsData = await productsRes.json();
+          totalProducts = productsData.count || 0;
         }
 
-        if (!ordersRes.ok) {
-          // Simulate recent orders data
-          setRecentOrders([
-            {
-              id: "ORD-001",
-              customerName: "John Smith",
-              product: "Wireless Headphones",
-              amount: 89.99,
-              status: "pending",
-              date: "2024-01-15"
-            },
-            {
-              id: "ORD-002",
-              customerName: "Sarah Johnson",
-              product: "Smart Watch",
-              amount: 199.99,
-              status: "completed",
-              date: "2024-01-14"
-            },
-            {
-              id: "ORD-003",
-              customerName: "Mike Brown",
-              product: "Phone Case",
-              amount: 24.99,
-              status: "pending",
-              date: "2024-01-14"
-            }
-          ]);
-        } else {
+        // Orders -> use count and recent orders
+        let totalOrders = 0;
+        let pendingOrders = 0;
+        let recentOrdersData: RecentOrder[] = [];
+        if (ordersRes.ok) {
           const ordersData = await ordersRes.json();
-          setRecentOrders(ordersData.orders || []);
+          totalOrders = ordersData.count || 0;
+          recentOrdersData = ordersData.orders || [];
+          
+          // Properly type each order
+          pendingOrders = (ordersData.orders as RecentOrder[] | undefined)?.filter(
+            (o) => o.status === "pending"
+          ).length || 0;
         }
+
+        setStats((prev) => ({
+          totalRevenue: prev?.totalRevenue || 0, // keep previous or calculate later
+          totalProducts,
+          totalOrders,
+          pendingOrders,
+          monthlyRevenue: prev?.monthlyRevenue || 0,
+          revenueChange: prev?.revenueChange || 0,
+          ordersChange: prev?.ordersChange || 0,
+          lowStockProducts: prev?.lowStockProducts || 0,
+        }));
+
+        setRecentOrders(recentOrdersData);
       })
       .catch((err) => {
         console.error("Failed to fetch dashboard data:", err);
         setError("Failed to load dashboard data");
-        
-        // Set mock data even on error for demo purposes
         setStats({
-          totalRevenue: 12450.75,
-          totalProducts: 24,
-          totalOrders: 89,
-          pendingOrders: 5,
-          monthlyRevenue: 3240.50,
-          revenueChange: 12.5,
-          ordersChange: -2.3,
-          lowStockProducts: 3
+          totalRevenue: 0,
+          totalProducts: 0,
+          totalOrders: 0,
+          pendingOrders: 0,
+          monthlyRevenue: 0,
+          revenueChange: 0,
+          ordersChange: 0,
+          lowStockProducts: 0,
         });
+        setRecentOrders([]);
       })
-      .finally(() => {
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   }, []);
 
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      completed: "bg-green-100 text-green-800 border-green-200",
-      cancelled: "bg-red-100 text-red-800 border-red-200"
-    };
-    return badges[status as keyof typeof badges] || badges.pending;
-  };
+  // const getStatusBadge = (status: string) => {
+  //   const badges = {
+  //     pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  //     completed: "bg-green-100 text-green-800 border-green-200",
+  //     cancelled: "bg-red-100 text-red-800 border-red-200"
+  //   };
+  //   return badges[status as keyof typeof badges] || badges.pending;
+  // };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4" />;
-      case 'cancelled': return <XCircle className="w-4 h-4" />;
-      default: return <AlertTriangle className="w-4 h-4" />;
-    }
-  };
+  // const getStatusIcon = (status: string) => {
+  //   switch (status) {
+  //     case 'completed': return <CheckCircle className="w-4 h-4" />;
+  //     case 'cancelled': return <XCircle className="w-4 h-4" />;
+  //     default: return <AlertTriangle className="w-4 h-4" />;
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -317,7 +294,7 @@ export default function SellerHome() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Orders */}
-          <div className="lg:col-span-2">
+          {/* <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="px-6 py-4 border-b border-gray-100">
                 <div className="flex items-center justify-between">
@@ -331,7 +308,7 @@ export default function SellerHome() {
                 {recentOrders.length > 0 ? (
                   <div className="space-y-4">
                     {recentOrders.map((order) => (
-                      <div key={order.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div key={order._id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-center space-x-4">
                           <div className="flex-shrink-0">
                             {getStatusIcon(order.status)}
@@ -359,7 +336,7 @@ export default function SellerHome() {
                 )}
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Profile & Quick Actions */}
           <div className="space-y-6">

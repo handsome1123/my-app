@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
-import { Product } from "@/models/Product";  // <-- make sure you have this model defined
+import { Product } from "@/models/Product";
 
 export async function GET() {
   try {
@@ -9,7 +9,10 @@ export async function GET() {
     // Fetch all products, latest first
     const products = await Product.find().sort({ createdAt: -1 });
 
-    return NextResponse.json({ products });
+    // Count total number of products
+    const totalProducts = await Product.countDocuments();
+
+    return NextResponse.json({ products, totalProducts });
   } catch (error) {
     console.error("❌ Error fetching products:", error);
     return NextResponse.json(
