@@ -13,7 +13,8 @@ import {
   CheckCircle,
   Minus,
   Plus,
-  ArrowLeft
+  ArrowLeft,
+  AlertTriangle
 } from 'lucide-react';
 
 interface Product {
@@ -26,7 +27,8 @@ interface Product {
   rating?: number;
   reviewCount?: number;
   inStock?: boolean;
-  stockCount?: number;
+  stock?: number; // Changed from stockCount to match your data structure
+  stockCount?: number; // Keep both for compatibility
 }
 
 export default function ProductDetailPage() {
@@ -43,8 +45,13 @@ export default function ProductDetailPage() {
       try {
         const res = await fetch(`/api/buyer/products/${id}`);
         const data = await res.json();
-        if (res.ok) setProduct(data);
-        else setError(data.error || "Failed to fetch product");
+        if (res.ok) {
+          setProduct(data);
+          // Reset quantity to 1 when product loads
+          setQuantity(1);
+        } else {
+          setError(data.error || "Failed to fetch product");
+        }
       } catch {
         setError("Something went wrong.");
       } finally {
@@ -56,15 +63,41 @@ export default function ProductDetailPage() {
     
   }, [id]);
 
-  const handleQuantityChange = (change: number) => {
-    if (!product) return;
-    const maxStock = product.stockCount || 10; // get from table
-    setQuantity((prev) => Math.max(1, Math.min(maxStock, prev + change)));
+  // Get actual stock count from product data
+  const getStockCount = () => {
+    if (!product) return 0;
+    return product.stock || product.stockCount || 0;
   };
 
+  const handleQuantityChange = (change: number) => {
+    if (!product) return;
+    
+    const currentStock = getStockCount();
+    const newQuantity = quantity + change;
+    
+    // Ensure quantity is between 1 and available stock
+    if (newQuantity >= 1 && newQuantity <= currentStock) {
+      setQuantity(newQuantity);
+    }
+  };
+
+  const handleQuantityInput = (value: string) => {
+    if (!product) return;
+    
+    const numValue = parseInt(value);
+    const currentStock = getStockCount();
+    
+    if (isNaN(numValue) || numValue < 1) {
+      setQuantity(1);
+    } else if (numValue > currentStock) {
+      setQuantity(currentStock);
+    } else {
+      setQuantity(numValue);
+    }
+  };
 
   const handleBuyNow = () => {
-    if (product) {
+    if (product && quantity > 0 && quantity <= getStockCount()) {
       router.push(`/buyer/checkout?productId=${product._id}&quantity=${quantity}`);
     }
   };
@@ -116,11 +149,11 @@ export default function ProductDetailPage() {
     );
   }
 
-  // Default values for optional properties
+  // Get current stock and determine availability
+  const currentStock = getStockCount();
   const rating = product.rating || 4.5;
   const reviewCount = product.reviewCount || 0;
-  const inStock = product.inStock !== false; // Default to true if undefined
-  const stockCount = product.stockCount || 10;
+  const inStock = currentStock > 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
@@ -142,31 +175,6 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
           <div className="space-y-4">
-
-            {/* <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-lg group">
-              <Image
-                src={product.imageUrl || "/placeholder.png"}
-                alt={product.name}
-                width={500}
-                height={500}
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              {!inStock && (
-                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                  <span className="text-white text-xl font-semibold">Out of Stock</span>
-                </div>
-              )}
-              <button 
-                onClick={() => setIsFavorite(!isFavorite)}
-                className="absolute top-4 right-4 p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-all duration-200"
-              >
-                <Heart 
-                  size={20} 
-                  className={isFavorite ? "fill-red-500 text-red-500" : "text-gray-600"} 
-                />
-              </button>
-            </div> */}
-
             <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-lg group max-w-md mx-auto">
               <Image
                 src={product.imageUrl || "/placeholder.png"}
@@ -232,10 +240,11 @@ export default function ProductDetailPage() {
                 {inStock ? (
                   <div className="flex items-center gap-1 text-green-600">
                     <CheckCircle size={16} />
-                    <span className="text-sm font-medium">In Stock ({stockCount} available)</span>
+                    <span className="text-sm font-medium">In Stock ({currentStock} available)</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1 text-red-600">
+                    <AlertTriangle size={16} />
                     <span className="text-sm font-medium">Out of Stock</span>
                   </div>
                 )}
@@ -245,12 +254,12 @@ export default function ProductDetailPage() {
             {/* Price */}
             <div className="space-y-2">
               <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold text-gray-900">฿{product.price}</span>
+                <span className="text-4xl font-bold text-gray-900">฿{product.price.toLocaleString()}</span>
                 {product.originalPrice && product.originalPrice > product.price && (
                   <>
-                    <span className="text-xl text-gray-500 line-through">฿{product.originalPrice}</span>
+                    <span className="text-xl text-gray-500 line-through">฿{product.originalPrice.toLocaleString()}</span>
                     <span className="px-2 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
-                      Save ฿{(product.originalPrice - product.price).toFixed(2)}
+                      Save ฿{(product.originalPrice - product.price).toLocaleString()}
                     </span>
                   </>
                 )}
@@ -264,58 +273,83 @@ export default function ProductDetailPage() {
               <p className="text-gray-700 leading-relaxed">{product.description}</p>
             </div>
 
-            {/* Quantity Selector */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Quantity</h3>
-              <div className="flex items-center gap-3">
-                {/* Minus Button */}
-                <button
-                  onClick={() => handleQuantityChange(-1)}
-                  disabled={quantity <= 1}
-                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Minus size={16} />
-                </button>
-
-                {/* Quantity Display */}
-                <span className="px-4 py-2 border border-gray-300 rounded-lg min-w-[60px] text-center font-medium">
-                  {quantity}
-                </span>
-
-                {/* Plus Button */}
-                <button
-                  onClick={() => handleQuantityChange(1)}
-                  disabled={quantity >= (product?.stockCount || 10)}
-                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Plus size={16} />
-                </button>
+            {/* Stock Warning */}
+            {inStock && currentStock <= 5 && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-orange-600" />
+                  <span className="text-orange-800 font-medium text-sm">
+                    Only {currentStock} items left in stock!
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Quantity Selector */}
+            {inStock && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Quantity</h3>
+                  <span className="text-sm text-gray-600">Max: {currentStock}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {/* Minus Button */}
+                  <button
+                    onClick={() => handleQuantityChange(-1)}
+                    disabled={quantity <= 1}
+                    className="p-3 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Minus size={16} />
+                  </button>
+
+                  {/* Quantity Input */}
+                  <input
+                    type="number"
+                    min="1"
+                    max={currentStock}
+                    value={quantity}
+                    onChange={(e) => handleQuantityInput(e.target.value)}
+                    className="w-20 px-3 py-2 text-center border border-gray-300 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+
+                  {/* Plus Button */}
+                  <button
+                    onClick={() => handleQuantityChange(1)}
+                    disabled={quantity >= currentStock}
+                    className="p-3 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+                
+                {/* Quantity Helper Text */}
+                <p className="text-xs text-gray-500">
+                  {quantity === currentStock ? (
+                    "You've selected the maximum available quantity"
+                  ) : (
+                    `You can add ${currentStock - quantity} more to your cart`
+                  )}
+                </p>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="space-y-3">
               <button
                 onClick={handleBuyNow}
-                disabled={!inStock}
+                disabled={!inStock || quantity > currentStock}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 <ShoppingCart size={20} />
-                Buy Now
+                {!inStock ? 'Out of Stock' : 'Buy Now'}
               </button>
               
-              {/* <button
-                onClick={handleAddToCart}
-                disabled={!inStock}
-                className="w-full bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed font-semibold py-4 px-6 rounded-xl transition-colors duration-200"
-              >
-                Add to Cart
-              </button> */}
-
-              {/* <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2">
-                <Share2 size={18} />
-                Share Product
-              </button> */}
+              {!inStock && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                  <p className="text-gray-600 text-sm">This product is currently out of stock.</p>
+                  <p className="text-gray-500 text-xs mt-1">Check back later or contact us for availability updates.</p>
+                </div>
+              )}
             </div>
 
             {/* Features/Benefits */}

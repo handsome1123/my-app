@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface BankInfo {
   bankName: string;
@@ -35,11 +36,14 @@ export default function BuyerHome() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const router = useRouter();
+  
   // Fetch user profile
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token) {
+      router.replace("/login"); // redirect to login if not authenticated
+    }
 
     fetch("/api/seller/profile", {
       headers: { Authorization: `Bearer ${token}` },
@@ -47,7 +51,7 @@ export default function BuyerHome() {
       .then((res) => res.json())
       .then((data: Profile) => setProfile(data))
       .catch(() => setProfile(null));
-  }, []);
+  }, [router]);
 
   // Fetch all products
   // const fetchProducts = async () => {

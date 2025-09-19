@@ -9,6 +9,7 @@ import {
   Calendar,
   Phone
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface User {
   _id: string;
@@ -27,9 +28,15 @@ export default function AdminUsers() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchUsers() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        router.replace("/login");
+      }
       try {
         const token = localStorage.getItem("token");
         const res = await fetch("/api/admin/users", {
@@ -49,7 +56,7 @@ export default function AdminUsers() {
     }
 
     fetchUsers();
-  }, []);
+  }, [router]);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

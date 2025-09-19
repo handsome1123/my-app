@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import { 
   Package, 
@@ -100,9 +101,14 @@ export default function BuyerOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchOrders() {
+      const token = localStorage.getItem("token");
+        if (!token) {
+          router.replace("/login"); // redirect to login if not authenticated
+        }
       try {
         const token = localStorage.getItem("token");
         const res = await fetch("/api/buyer/orders", {
@@ -119,7 +125,7 @@ export default function BuyerOrdersPage() {
     }
 
     fetchOrders();
-  }, []);
+  }, [router]);
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.productId.name.toLowerCase().includes(searchTerm.toLowerCase());

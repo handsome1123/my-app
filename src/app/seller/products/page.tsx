@@ -31,12 +31,17 @@ export default function SellerProductsPage() {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      const token = localStorage.getItem("token");
+
+        if (!token) {
+          router.replace("/login"); // redirect to login if not authenticated
+          return; // ✅ exit early to prevent API call
+        }
+
       try {
         setLoading(true);
         setError("");
-
-        const token = localStorage.getItem("token");
-
+        
         const res = await fetch("/api/seller/products", {
           method: "GET",
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -59,7 +64,7 @@ export default function SellerProductsPage() {
     };
 
     fetchProducts();
-  }, []);
+  }, [router]);
 
 
   // delete product

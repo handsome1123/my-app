@@ -18,6 +18,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface BankInfo {
   bankName: string;
@@ -57,13 +58,12 @@ export default function SellerHome() {
   const [  , setRecentOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("No authentication token found");
-      setLoading(false);
-      return;
+      router.replace("/login"); // redirect to login if not authenticated
     }
 
     const headers = { Authorization: `Bearer ${token}` };
@@ -131,7 +131,7 @@ export default function SellerHome() {
         setRecentOrders([]);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   // const getStatusBadge = (status: string) => {
   //   const badges = {

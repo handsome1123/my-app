@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface Order {
   _id: string;
@@ -31,17 +32,25 @@ export default function SellerOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const fetchOrders = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        router.replace("/login"); // redirect to login if not authenticated
+        return; // ✅ exit early to prevent API call
+      }
+
       try {
         setLoading(true);
         setError("");
 
-        const token = localStorage.getItem("token");
         const res = await fetch("/api/seller/orders", {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         const data = await res.json();
 
         if (!res.ok) {
@@ -50,7 +59,8 @@ export default function SellerOrdersPage() {
         } else {
           setOrders(data.orders || []);
         }
-      } catch {
+      } catch (err) {
+        console.error("Fetch error:", err);
         setError("Something went wrong");
         setOrders([]);
       } finally {
@@ -59,7 +69,8 @@ export default function SellerOrdersPage() {
     };
 
     fetchOrders();
-  }, []);
+  }, [router]);
+
 
   const handleStatusChange = async (id: string, status: string) => {
     const token = localStorage.getItem("token");

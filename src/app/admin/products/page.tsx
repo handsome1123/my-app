@@ -31,6 +31,10 @@ export default function SellerProductsPage() {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.replace("/login");
+      }
       try {
         setLoading(true);
         setError("");
@@ -59,7 +63,7 @@ export default function SellerProductsPage() {
     };
 
     fetchProducts();
-  }, []);
+  }, [router]);
 
 
   // delete product

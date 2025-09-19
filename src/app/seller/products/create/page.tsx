@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface Product {
   _id: string;
@@ -27,6 +28,7 @@ export default function CreateProductPage() {
     stock: "",
     image: null as File | null,
   });
+  const router = useRouter();
 
   // Commission rate (e.g., 10% = 0.10)
   const commissionRate = 0.10; // 10%
@@ -34,24 +36,51 @@ export default function CreateProductPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   // Fetch seller's products
+  // const fetchProducts = useCallback(async () => {
+  //   if (!token) {
+  //       router.replace("/login"); // redirect to login if not authenticated
+  //       return; // ✅ exit early to prevent API call
+  //   }
+    
+  //   try {
+  //     setLoadingProducts(true);
+  //     const res = await fetch("/api/seller/products", {
+  //       headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //     });
+  //     const data = await res.json();
+  //     if (res.ok) {
+  //       setProducts(data.products || []);
+  //     } else {
+  //       setError(data.error || "Failed to fetch products");
+  //     }
+  //   } catch {
+  //     setError("Error fetching products");
+  //   } finally {
+  //     setLoadingProducts(false);
+  //   }
+  // }, [token]);
+
   const fetchProducts = useCallback(async () => {
+    const token = localStorage.getItem("token"); // read every time
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
     try {
       setLoadingProducts(true);
       const res = await fetch("/api/seller/products", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (res.ok) {
-        setProducts(data.products || []);
-      } else {
-        setError(data.error || "Failed to fetch products");
-      }
+      if (res.ok) setProducts(data.products || []);
+      else setError(data.error || "Failed to fetch products");
     } catch {
       setError("Error fetching products");
     } finally {
       setLoadingProducts(false);
     }
-  }, [token]);
+  }, [router]); // only router needed now
 
   useEffect(() => {
     fetchProducts();

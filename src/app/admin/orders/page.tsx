@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-
+import { useRouter } from "next/navigation";
 import { 
   Package, 
   Clock, 
@@ -147,29 +147,43 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const router = useRouter();
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
-
   useEffect(() => {
     async function fetchOrders() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        router.replace("/login");
+      }
+
       try {
-        const token = localStorage.getItem("token");
         const res = await fetch("/api/admin/orders", {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         const data = await res.json();
-        if (res.ok) setOrders(data.orders);
-        else setError(data.error || "Failed to fetch orders");
-      } catch {
-        setError("Failed to fetch orders");
+
+        if (res.ok) {
+          setOrders(data.orders);
+        } else if (res.status === 401) {
+          setError("Unauthorized. Please log in again.");
+          // optionally redirect to login
+        } else {
+          setError(data.error || "Failed to fetch orders");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch orders. Please try again later.");
       } finally {
         setLoading(false);
       }
     }
 
     fetchOrders();
-  }, []);
+  }, [router]);
 
   const filteredOrders = orders.filter(order => {
   const productName = order.productId?.name ?? "";
@@ -213,7 +227,6 @@ export default function AdminOrdersPage() {
       setSelectedOrderId(null);
     }
   };
-
 
   // Handler to reject payment
   const handleRejectPayment = async () => {

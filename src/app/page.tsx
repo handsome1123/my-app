@@ -80,7 +80,10 @@ export default function HomePage() {
   }, [search]);
 
   const ProductCard = ({ product }: { product: Product }) => (
-    <div className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1">
+    <Link 
+      href={`/buyer/products/${product._id}`}
+      className="group block bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 cursor-pointer"
+    >
       <div className="relative overflow-hidden">
         {product.imageUrl ? (
           <Image
@@ -127,31 +130,25 @@ export default function HomePage() {
           <span className="text-sm text-gray-500 ml-2">(4.5)</span>
         </div>
         
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center">
           <div className="flex flex-col">
             <span className="font-bold text-2xl text-blue-600">฿{product.price.toLocaleString()}</span>
-            {product.stock > 0 && (
+            {product.stock > 0 ? (
               <span className="text-sm text-green-600">✓ In stock ({product.stock})</span>
+            ) : (
+              <span className="text-sm text-red-500">✗ Out of stock</span>
             )}
           </div>
         </div>
-        
-        <Link
-          href={`/buyer/products/${product._id}`}
-          className={`block w-full text-center py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
-            product.stock > 0
-              ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl"
-              : "bg-gray-200 text-gray-500 cursor-not-allowed"
-          }`}
-        >
-          {product.stock > 0 ? "View Details" : "Out of Stock"}
-        </Link>
       </div>
-    </div>
+    </Link>
   );
 
   const ProductListItem = ({ product }: { product: Product }) => (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200">
+    <Link
+      href={`/buyer/products/${product._id}`}
+      className="block bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 cursor-pointer"
+    >
       <div className="flex">
         <div className="w-32 h-32 flex-shrink-0">
           {product.imageUrl ? (
@@ -171,7 +168,7 @@ export default function HomePage() {
         
         <div className="flex-1 p-4 flex justify-between">
           <div className="flex-1">
-            <h3 className="font-bold text-lg mb-1 text-gray-900">
+            <h3 className="font-bold text-lg mb-1 text-gray-900 hover:text-blue-600 transition-colors">
               {product.name}
             </h3>
             <p className="text-sm text-gray-600 mb-2 line-clamp-2">
@@ -187,25 +184,17 @@ export default function HomePage() {
             </div>
           </div>
           
-          <div className="flex flex-col items-end justify-between ml-4">
+          <div className="flex flex-col items-end justify-center ml-4">
             <div className="text-right">
               <span className="font-bold text-xl text-blue-600">฿{product.price.toLocaleString()}</span>
-              <div className="text-sm text-gray-500">Stock: {product.stock}</div>
+              <div className={`text-sm mt-1 ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                {product.stock > 0 ? `✓ Stock: ${product.stock}` : '✗ Out of stock'}
+              </div>
             </div>
-            <Link
-              href={`/buyer/products/${product._id}`}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                product.stock > 0
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-gray-200 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              {product.stock > 0 ? "View" : "Out of Stock"}
-            </Link>
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 
   return (

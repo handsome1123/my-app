@@ -65,23 +65,68 @@ export default function EditProductPage() {
   }, [error, success]);
 
   // Fetch product data
+  // useEffect(() => {
+  //   const fetchProduct = async () => {
+  //       const token = localStorage.getItem("token");
+  //         if (!token) {
+  //           router.replace("/login"); // redirect to login if not authenticated
+  //           return; // ✅ exit early to prevent API call
+  //         }
+
+  //     try {
+  //       setLoading(true);
+  //       setError("");
+
+  //       const res = await fetch(`/api/seller/products/${id}`, {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
+        
+  //       const data = await res.json();
+  //       if (!res.ok) {
+  //         throw new Error(data.error || "Failed to fetch product");
+  //       }
+
+  //       const productData = data.product;
+  //       setProduct(productData);
+  //       setName(productData.name || "");
+  //       setDescription(productData.description || "");
+  //       setPrice(productData.price?.toString() || "");
+  //       setStock(productData.stock?.toString() || "");
+  //       setCategory(productData.category || "");
+  //       setIsActive(productData.isActive ?? true);
+        
+  //       // Set preview image if exists
+  //       if (productData.imageUrl) {
+  //         setPreviewImage(productData.imageUrl);
+  //       }
+  //     } catch {
+  //       setError("Failed to load product");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   if (id) {
+  //     fetchProduct();
+  //   }
+  // }, [id]);
   useEffect(() => {
     const fetchProduct = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.replace("/login"); // redirect if not authenticated
+        return; // exit early
+      }
+
       try {
         setLoading(true);
         setError("");
-        
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Authentication required");
-          return;
-        }
 
         const res = await fetch(`/api/seller/products/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
         const data = await res.json();
+
         if (!res.ok) {
           throw new Error(data.error || "Failed to fetch product");
         }
@@ -94,8 +139,7 @@ export default function EditProductPage() {
         setStock(productData.stock?.toString() || "");
         setCategory(productData.category || "");
         setIsActive(productData.isActive ?? true);
-        
-        // Set preview image if exists
+
         if (productData.imageUrl) {
           setPreviewImage(productData.imageUrl);
         }
@@ -109,7 +153,8 @@ export default function EditProductPage() {
     if (id) {
       fetchProduct();
     }
-  }, [id]);
+  }, [id, router]); // ✅ add router here
+
 
   // Handle file input change
   const handleFileChange = (file: File) => {
