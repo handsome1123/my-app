@@ -31,7 +31,7 @@ export default function CreateProductPage() {
   const router = useRouter();
 
   // Commission rate (e.g., 10% = 0.10)
-  const commissionRate = 0.10; // 10%
+  const commissionRate = 0.1; // 10% commission
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -312,12 +312,6 @@ export default function CreateProductPage() {
                 />
               </div>
 
-              {/* Commission Rate Info */}
-            <p className="text-sm text-red-500 mt-2">
-              Note: {commissionRate * 100}% commission will be deducted from each sale.
-            </p>
-
-
               {/* Price and Stock */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -336,7 +330,18 @@ export default function CreateProductPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     required
                   />
+
+                  {/* Show commission + earnings dynamically */}
+                  {form.price && parseFloat(form.price) > 0 && (
+                    <div className="mt-2 text-xs text-gray-600 space-y-1">
+                      <p>Platform fee (10%): <span className="text-red-500">฿{(parseFloat(form.price) * commissionRate).toFixed(2)}</span></p>
+                      <p>You will receive: <span className="text-green-600 font-semibold">฿{(parseFloat(form.price) * (1 - commissionRate)).toFixed(2)}</span></p>
+                    </div>
+                  )}
                 </div>
+
+
+
                 <div>
                   <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-2">
                     Stock Quantity *

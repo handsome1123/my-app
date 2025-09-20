@@ -231,9 +231,11 @@ function CheckoutContent() {
 
 
   const subtotal = product ? product.price * quantity : 0;
-  const shipping = subtotal > 100 ? 0 : 9.99;
-  const tax = subtotal * 0.08; // 8% tax
-  const total = subtotal + shipping + tax;
+  // const shipping = subtotal > 100 ? 0 : 9.99;
+  // const tax = subtotal * 0.08; // 8% tax
+  // const total = subtotal + shipping + tax;
+  const shipping = 0;
+  const total = subtotal + shipping ;
 
   if (loading) return <CheckoutLoading />;
   
@@ -640,12 +642,14 @@ function CheckoutContent() {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>{shipping === 0 ? 'Free' : `${shipping.toFixed(2)}`}</span>
+                  {/* <span>{shipping === 0 ? 'Free' : `${shipping.toFixed(2)}`}</span> */}
+                  <span>Free</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
+                {/* Tax Fee */}
+                {/* <div className="flex justify-between text-gray-600">
                   <span>Tax</span>
                   <span>฿{tax.toFixed(2)}</span>
-                </div>
+                </div> */}
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-lg font-semibold text-gray-900">
                     <span>Total</span>

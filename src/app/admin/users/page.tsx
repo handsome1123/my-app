@@ -65,6 +65,27 @@ export default function AdminUsers() {
     return matchesSearch && matchesRole;
   });
 
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      if (res.ok) {
+        const updatedUser = await res.json();
+        setUsers((prev) =>
+          prev.map((u) => (u._id === userId ? { ...u, role: updatedUser.role } : u))
+        );
+      } else {
+        console.error("Failed to update role");
+      }
+    } catch (err) {
+      console.error("Error updating role", err);
+    }
+  };
+
   if (loading) return <p className="text-center mt-10">Loading users...</p>;
   if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
 
@@ -148,7 +169,7 @@ export default function AdminUsers() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    {/* <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
                         user.role === 'seller' ? 'bg-blue-100 text-blue-800' :
@@ -156,7 +177,19 @@ export default function AdminUsers() {
                       }`}>
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                       </span>
+                    </td> */}
+                    <td className="px-6 py-4">
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                        className="px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="buyer">Buyer</option>
+                        <option value="seller">Seller</option>
+                        <option value="admin">Admin</option>
+                      </select>
                     </td>
+
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         user.status === 'active' ? 'bg-green-100 text-green-800' :
