@@ -16,9 +16,10 @@ import {
   Mail,
   Upload,
   X,
-  QrCode,
   FileText,
-  Camera
+  Camera,
+  Clock,
+  Bell
 } from "lucide-react";
 
 interface Product {
@@ -27,6 +28,7 @@ interface Product {
   description: string;
   price: number;
   imageUrl: string;
+  sellerId: string; // Add seller ID to get seller's email
 }
 
 interface CheckoutForm {
@@ -39,7 +41,13 @@ interface CheckoutForm {
   state: string;
   zipCode: string;
   country: string;
-  paymentSlip?: string; // ✅ Cloudinary URL
+  paymentSlip?: string;
+}
+
+interface OrderConfirmation {
+  orderId: string;
+  status: 'pending_seller_confirmation' | 'confirmed' | 'rejected';
+  sellerResponse?: string;
 }
 
 // Loading component
@@ -68,7 +76,9 @@ function CheckoutContent() {
   const [processing, setProcessing] = useState(false);
   const [paymentSlip, setPaymentSlip] = useState<File | null>(null);
   const [paymentSlipPreview, setPaymentSlipPreview] = useState<string>("");
-  const [currentStep, setCurrentStep] = useState<'form' | 'payment' | 'slip'>('form');
+  const [currentStep, setCurrentStep] = useState<'form' | 'waiting_confirmation' | 'payment' | 'slip'>('form');
+  const [orderConfirmation, setOrderConfirmation] = useState<OrderConfirmation | null>(null);
+  const [ , setWaitingForSeller] = useState(false);
   
   const [formData, setFormData] = useState<CheckoutForm>({
     firstName: "",
@@ -80,7 +90,7 @@ function CheckoutContent() {
     state: "",
     zipCode: "",
     country: "",
-    paymentSlip: "" // <-- URL after upload
+    paymentSlip: ""
   });
 
   const [qrImage, setQrImage] = useState(null);
@@ -104,10 +114,10 @@ function CheckoutContent() {
     fetchProduct();
   }, [productId]);
 
-  // Fetch PromptPay QR code
+  // Fetch PromptPay QR code (only when seller confirms availability)
   useEffect(() => {
     async function fetchQR() {
-      if (!product || !product.price) return;
+      if (!product || !product.price || currentStep !== 'payment') return;
 
       try {
         const res = await fetch(`/api/seller/promptpay?amount=${product.price * quantity}`);
@@ -126,8 +136,44 @@ function CheckoutContent() {
     }
 
     fetchQR();
-  }, [product, quantity]);
+  }, [product, quantity, currentStep]);
 
+  // Poll for seller confirmation
+  useEffect(() => {
+    let pollInterval: NodeJS.Timeout;
+    
+    if (currentStep === 'waiting_confirmation' && orderConfirmation?.orderId) {
+      pollInterval = setInterval(async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const res = await fetch(`/api/buyer/orders/${orderConfirmation.orderId}/status`, {
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          });
+          
+          const data = await res.json();
+          if (res.ok) {
+            if (data.status === 'confirmed') {
+              setCurrentStep('payment');
+              setWaitingForSeller(false);
+              clearInterval(pollInterval);
+            } else if (data.status === 'rejected') {
+              setError(data.sellerResponse || 'Seller rejected the order. Product may not be available.');
+              setWaitingForSeller(false);
+              clearInterval(pollInterval);
+            }
+          }
+        } catch (err) {
+          console.error('Error polling order status:', err);
+        }
+      }, 5000); // Poll every 5 seconds
+    }
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [currentStep, orderConfirmation?.orderId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -141,7 +187,6 @@ function CheckoutContent() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Optional: check file type/size
     if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
       setError("Please select an image less than 5MB");
       return;
@@ -162,7 +207,8 @@ function CheckoutContent() {
     setPaymentSlipPreview("");
   };
 
-  const handleProceedToPayment = () => {
+  // Modified function to send notification to seller instead of proceeding directly to payment
+  const handleSendSellerNotification = async () => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     if (!token) {
@@ -171,21 +217,50 @@ function CheckoutContent() {
     }
 
     // Basic form validation
-    const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode',];
-
+    const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
     const isFormValid = requiredFields.every(field => {
       const value = formData[field as keyof CheckoutForm];
       return typeof value === 'string' && value.trim() !== '';
     });
 
-    
     if (!isFormValid) {
       setError("Please fill in all required fields");
       return;
     }
     
     setError("");
-    setCurrentStep('payment');
+    setProcessing(true);
+
+    try {
+      // Create preliminary order and send notification to seller
+      const res = await fetch('/api/buyer/request-seller-confirmation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId,
+          quantity,
+          customerInfo: formData
+        })
+      });
+
+      const data = await res.json();
+      
+      if (res.ok) {
+        setOrderConfirmation(data);
+        setCurrentStep('waiting_confirmation');
+        setWaitingForSeller(true);
+      } else {
+        setError(data.error || 'Failed to send notification to seller');
+      }
+    } catch (err) {
+      console.error('Error sending seller notification:', err);
+      setError('Something went wrong while notifying the seller');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleProceedToSlip = () => {
@@ -193,7 +268,7 @@ function CheckoutContent() {
   };
 
   async function handleConfirmPurchase() {
-    if (!productId || !product || !paymentSlip) return;
+    if (!productId || !product || !paymentSlip || !orderConfirmation?.orderId) return;
 
     setProcessing(true);
     try {
@@ -201,16 +276,13 @@ function CheckoutContent() {
 
       // Create FormData for file upload
       const orderData = new FormData();
-      orderData.append("productId", productId);
-      orderData.append("quantity", quantity.toString());
-      orderData.append("paymentSlip", paymentSlip); // ✅ send file directly
-      orderData.append("customerInfo", JSON.stringify(formData));
+      orderData.append("orderId", orderConfirmation.orderId);
+      orderData.append("paymentSlip", paymentSlip);
 
-      const res = await fetch(`/api/buyer/checkout`, {
+      const res = await fetch(`/api/buyer/complete-order`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`, // Only auth header
-          // DO NOT set Content-Type when sending FormData
+          "Authorization": `Bearer ${token}`,
         },
         body: orderData,
       });
@@ -219,7 +291,7 @@ function CheckoutContent() {
       if (res.ok) {
         setOrderSuccess(true);
       } else {
-        setError(data.error || "Failed to create order");
+        setError(data.error || "Failed to complete order");
       }
     } catch (err) {
       console.error(err);
@@ -229,13 +301,9 @@ function CheckoutContent() {
     }
   }
 
-
   const subtotal = product ? product.price * quantity : 0;
-  // const shipping = subtotal > 100 ? 0 : 9.99;
-  // const tax = subtotal * 0.08; // 8% tax
-  // const total = subtotal + shipping + tax;
   const shipping = 0;
-  const total = subtotal + shipping ;
+  const total = subtotal + shipping;
 
   if (loading) return <CheckoutLoading />;
   
@@ -305,7 +373,6 @@ function CheckoutContent() {
     );
   }
 
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
@@ -314,7 +381,8 @@ function CheckoutContent() {
           <div className="flex items-center justify-between">
             <button 
               onClick={() => {
-                if (currentStep === 'payment') setCurrentStep('form');
+                if (currentStep === 'waiting_confirmation') setCurrentStep('form');
+                else if (currentStep === 'payment') setCurrentStep('waiting_confirmation');
                 else if (currentStep === 'slip') setCurrentStep('payment');
                 else router.back();
               }}
@@ -325,8 +393,9 @@ function CheckoutContent() {
             </button>
             <div className="flex items-center gap-4">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'form' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>1</div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'payment' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>2</div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'slip' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>3</div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'waiting_confirmation' ? 'bg-yellow-500 text-white' : currentStep === 'payment' || currentStep === 'slip' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>2</div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'payment' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>3</div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'slip' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>4</div>
             </div>
             <div className="w-16"></div>
           </div>
@@ -457,20 +526,82 @@ function CheckoutContent() {
                 </div>
 
                 <button
-                  onClick={handleProceedToPayment}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200"
+                  onClick={handleSendSellerNotification}
+                  disabled={processing}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2"
                 >
-                  Continue to Payment
+                  {processing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Notifying Seller...
+                    </>
+                  ) : (
+                    <>
+                      <Bell size={20} />
+                      Notify Seller & Check Availability
+                    </>
+                  )}
                 </button>
               </div>
             )}
 
-            {/* Step 2: QR Code Payment */}
+            {/* Step 2: Waiting for Seller Confirmation */}
+            {currentStep === 'waiting_confirmation' && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <Clock size={24} className="text-yellow-500" />
+                  <h2 className="text-xl font-semibold text-gray-900">Waiting for Seller Confirmation</h2>
+                </div>
+                
+                <div className="text-center space-y-6">
+                  <div className="bg-yellow-50 rounded-2xl p-8">
+                    <div className="animate-pulse flex justify-center mb-4">
+                      <Mail size={64} className="text-yellow-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Notification Sent to Seller
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      We&apos;ve sent your order details to the seller. They will confirm product availability shortly.
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500"></div>
+                      <span>Checking every 5 seconds...</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-800 mb-2">Order Details Sent:</h4>
+                    <div className="text-left space-y-1 text-sm text-blue-700">
+                      <p><strong>Product:</strong> {product.name}</p>
+                      <p><strong>Quantity:</strong> {quantity}</p>
+                      <p><strong>Customer:</strong> {formData.firstName} {formData.lastName}</p>
+                      <p><strong>Email:</strong> {formData.email}</p>
+                      <p><strong>Phone:</strong> {formData.phone}</p>
+                      <p><strong>Address:</strong> {formData.address}, {formData.city}, {formData.state} {formData.zipCode}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600">
+                      <strong>What happens next?</strong><br />
+                      The seller will receive an email with your order details and will confirm if the product is available. 
+                      Once confirmed, you&apos;ll be able to proceed with payment.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: QR Code Payment (only after seller confirmation) */}
             {currentStep === 'payment' && (
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center gap-3 mb-6">
-                  <QrCode size={24} className="text-blue-600" />
-                  <h2 className="text-xl font-semibold text-gray-900">Scan QR Code to Pay</h2>
+                  <CheckCircle2 size={24} className="text-green-600" />
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">Seller Confirmed - Scan QR Code to Pay</h2>
+                    <p className="text-sm text-green-600">Product is available and ready for purchase!</p>
+                  </div>
                 </div>
                 
                 <div className="text-center space-y-6">
@@ -482,13 +613,13 @@ function CheckoutContent() {
                         width={256} height={256} 
                         className="w-64 h-64 mx-auto" />
 
-                  {paymentInfo && (
-                    <div className="mt-2 text-center text-gray-700">
-                      <p>{paymentInfo.bankName}</p>
-                      <p>{paymentInfo.accountNumber}</p>
-                      <p>{paymentInfo.accountName}</p>
-                    </div>
-                  )}
+                        {paymentInfo && (
+                          <div className="mt-2 text-center text-gray-700">
+                            <p>{paymentInfo.bankName}</p>
+                            <p>{paymentInfo.accountNumber}</p>
+                            <p>{paymentInfo.accountName}</p>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <p>Generating QR code...</p>
@@ -500,20 +631,20 @@ function CheckoutContent() {
                     <div className="space-y-2 text-left">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Bank:</span>
-                        <span className="font-medium"></span>
+                        <span className="font-medium">{paymentInfo?.bankName || ''}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Account:</span>
-                        <span className="font-medium"></span>
+                        <span className="font-medium">{paymentInfo?.accountNumber || ''}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Account Name:</span>
-                        <span className="font-medium"></span>
+                        <span className="font-medium">{paymentInfo?.accountName || ''}</span>
                       </div>
                       <div className="border-t pt-2 mt-4">
                         <div className="flex justify-between text-lg font-bold">
                           <span>Amount to Pay:</span>
-                          <span className="text-green-600">${total.toFixed(2)}</span>
+                          <span className="text-green-600">฿{total.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -536,7 +667,7 @@ function CheckoutContent() {
               </div>
             )}
 
-            {/* Step 3: Upload Payment Slip */}
+            {/* Step 4: Upload Payment Slip */}
             {currentStep === 'slip' && (
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center gap-3 mb-6">
@@ -571,7 +702,7 @@ function CheckoutContent() {
                       </div>
                     </div>
                   ) : (
-                                          <div className="space-y-4">
+                    <div className="space-y-4">
                       <div className="relative bg-gray-100 rounded-lg p-4">
                         <button
                           onClick={removePaymentSlip}
@@ -601,7 +732,7 @@ function CheckoutContent() {
                         <div>
                           <p className="font-medium text-green-800">Ready to place order</p>
                           <p className="text-sm text-green-600 mt-1">
-                            Your payment slip has been uploaded. Click &apos;Place Order&apos; to complete your purchase.
+                            Your payment slip has been uploaded. Click &apos;Complete Order&apos; to finalize your purchase.
                           </p>
                         </div>
                       </div>
@@ -642,14 +773,8 @@ function CheckoutContent() {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  {/* <span>{shipping === 0 ? 'Free' : `${shipping.toFixed(2)}`}</span> */}
                   <span>Free</span>
                 </div>
-                {/* Tax Fee */}
-                {/* <div className="flex justify-between text-gray-600">
-                  <span>Tax</span>
-                  <span>฿{tax.toFixed(2)}</span>
-                </div> */}
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-lg font-semibold text-gray-900">
                     <span>Total</span>
@@ -658,19 +783,37 @@ function CheckoutContent() {
                 </div>
               </div>
 
-              {/* Payment Status */}
-              {currentStep === 'payment' && (
+              {/* Status Indicators */}
+              {currentStep === 'form' && (
                 <div className="bg-blue-50 rounded-lg p-4 mb-6">
                   <div className="flex items-center gap-2 text-blue-700">
-                    <QrCode size={16} />
-                    <span className="text-sm font-medium">Scan QR code to pay ฿{total.toFixed(2)}</span>
+                    <User size={16} />
+                    <span className="text-sm font-medium">Fill in your information</span>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 'waiting_confirmation' && (
+                <div className="bg-yellow-50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center gap-2 text-yellow-700">
+                    <Clock size={16} />
+                    <span className="text-sm font-medium">Waiting for seller confirmation...</span>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 'payment' && (
+                <div className="bg-green-50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center gap-2 text-green-700">
+                    <CheckCircle2 size={16} />
+                    <span className="text-sm font-medium">Confirmed! Scan QR code to pay ฿{total.toFixed(2)}</span>
                   </div>
                 </div>
               )}
 
               {currentStep === 'slip' && (
-                <div className="bg-yellow-50 rounded-lg p-4 mb-6">
-                  <div className="flex items-center gap-2 text-yellow-700">
+                <div className="bg-purple-50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center gap-2 text-purple-700">
                     <Upload size={16} />
                     <span className="text-sm font-medium">
                       {paymentSlip ? "Payment slip uploaded" : "Upload payment slip"}
@@ -710,7 +853,7 @@ function CheckoutContent() {
                   ) : (
                     <>
                       <ShoppingCart size={20} />
-                      Place Order
+                      Complete Order
                     </>
                   )}
                 </button>
@@ -719,7 +862,9 @@ function CheckoutContent() {
               {currentStep !== 'slip' && (
                 <div className="bg-gray-100 rounded-xl p-4 text-center">
                   <p className="text-sm text-gray-500">
-                    Complete the payment process to place your order
+                    {currentStep === 'form' && "Complete the form to notify seller"}
+                    {currentStep === 'waiting_confirmation' && "Waiting for seller to confirm availability"}
+                    {currentStep === 'payment' && "Complete the payment process to place your order"}
                   </p>
                 </div>
               )}

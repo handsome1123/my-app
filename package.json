@@ -74,6 +74,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.97",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.1",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19",
     "@types/react-day-picker": "^5.3.0",

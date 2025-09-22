@@ -6,7 +6,7 @@ export interface IOrder extends Document {
   sellerId: mongoose.Types.ObjectId;
   quantity: number;
   totalPrice: number;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" |  "rejected";
   paymentSlipUrl?: string;   // ✅ Cloudinary URL
   shippingAddress: {
     firstName: string;
@@ -31,7 +31,7 @@ const OrderSchema = new Schema<IOrder>(
     totalPrice: { type: Number, required: true, min: 0 },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
+      enum: ["pending", "confirmed", "shipped", "delivered", "cancelled", "rejected"],
       default: "pending",
     },
     paymentSlipUrl: { type: String }, // ✅ renamed for clarity
