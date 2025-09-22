@@ -131,7 +131,7 @@ async function sendSellerEmail(
   <br/>
   <p>
     👉 Please log in to your dashboard to confirm or reject this order:  
-    <a href="${process.env.NEXT_PUBLIC_BASE_URL}/login" 
+    <a href="${process.env.NEXT_PUBLIC_API_URL}/login" 
        style="display:inline-block;padding:10px 20px;background:#4F46E5;color:#fff;
               text-decoration:none;border-radius:6px;font-weight:bold;">
       Go to Dashboard
