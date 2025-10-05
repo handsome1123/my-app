@@ -10,6 +10,9 @@ const UserSchema = new Schema(
     password: { type: String, required: false }, // ✅ make optional
     role: { type: String, enum: ["buyer", "seller", "admin"], default: "buyer" },
      provider: { type: String, enum: ["credentials", "google"], default: "credentials" },
+    isVerified: { type: Boolean, default: false },
+    verificationToken: { type: String },
+    verificationTokenExpires: { type: Date },
   },
   { timestamps: true }
 );

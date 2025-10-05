@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
-import { User } from "@/models/User";
 import bcrypt from "bcryptjs";
-import { signToken } from "@/lib/jwt";
-
+import jwt from "jsonwebtoken";
+import { sendVerificationEmail } from "@/lib/mailer";
+import { User } from "@/models/User";
+import { connectDB } from "@/lib/mongodb";
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
     const { email, password, name, role } = await request.json();
 
-    // Validation
+    // 1️⃣ Validation
     if (!email || !password || !name) {
       return NextResponse.json(
         { error: "Email, password, and name are required" },
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user already exists
+    // 2️⃣ Check existing user
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
@@ -35,35 +35,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hash password
+    // 3️⃣ Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
-    const user = new User({
-      email,
-      password: hashedPassword,
-      name,
-      role: role || "buyer",
-    });
-
-    await user.save();
-
-    // Generate token
-    const token = signToken({
-      id: user._id.toString(),
-      email: user.email,
-      role: user.role,
-    });
-
-    return NextResponse.json({
-      message: "User created successfully",
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
+    // 4️⃣ Create verification token (not stored in DB)
+    const token = jwt.sign(
+      {
+        email,
+        name,
+        password: hashedPassword,
+        role: role || "buyer",
       },
+      process.env.EMAIL_VERIFY_SECRET!, // must be set in .env
+      { expiresIn: "1h" }
+    );
+
+    // 5️⃣ Send verification email
+    await sendVerificationEmail(email, token);
+
+    // ⚠️ Do NOT save user yet!
+    return NextResponse.json({
+      message:
+        "Verification email sent! Please check your inbox to complete registration.",
     });
   } catch (error: unknown) {
     console.error("Signup error:", error);

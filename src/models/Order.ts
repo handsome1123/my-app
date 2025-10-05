@@ -1,14 +1,17 @@
-import mongoose, { Schema, Document, model, models } from "mongoose";
+// models/Order.ts - Your Order model schema structure
+
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IOrder extends Document {
-  productId: mongoose.Types.ObjectId;
   buyerId: mongoose.Types.ObjectId;
-  sellerId: mongoose.Types.ObjectId;
+  sellerId?: mongoose.Types.ObjectId;
+  productId: mongoose.Types.ObjectId;
   quantity: number;
-  totalPrice: number;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" |  "rejected";
-  paymentSlipUrl?: string;   // ✅ Cloudinary URL
-  shippingAddress: {
+  totalPrice: number; // NOT totalAmount
+  status: "pending_payment" | "paid" | "confirmed" | "shipped" | "delivered" | "cancelled" | "rejected";
+  stripePaymentIntentId?: string;
+  stripeSessionId?: string;
+  shippingAddress: { // NOT customerInfo
     firstName: string;
     lastName: string;
     email: string;
@@ -17,37 +20,88 @@ export interface IOrder extends Document {
     city: string;
     state: string;
     zipCode: string;
+    country?: string;
   };
   createdAt: Date;
-  updatedAt: Date;
+  paidAt?: Date;
+  updatedAt?: Date;
 }
 
-const OrderSchema = new Schema<IOrder>(
-  {
-    productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
-    buyerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    sellerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    quantity: { type: Number, required: true, min: 1 },
-    totalPrice: { type: Number, required: true, min: 0 },
-    status: {
+const OrderSchema = new Schema<IOrder>({
+  buyerId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: [true, "Buyer ID is required"],
+  },
+  sellerId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
+  productId: {
+    type: Schema.Types.ObjectId,
+    ref: "Product",
+    required: true,
+  },
+  quantity: {
+    type: Number,
+    required: true,
+    min: 1,
+  },
+  totalPrice: { // Make sure it's totalPrice
+    type: Number,
+    required: [true, "Total price is required"],
+  },
+  status: {
+    type: String,
+    enum: ["pending_payment", "paid", "confirmed", "shipped", "delivered", "cancelled", "rejected"],
+    default: "pending_payment",
+  },
+  stripePaymentIntentId: String,
+  stripeSessionId: String,
+  shippingAddress: { // Make sure it's shippingAddress
+    firstName: {
       type: String,
-      enum: ["pending", "confirmed", "shipped", "delivered", "cancelled", "rejected"],
-      default: "pending",
+      required: [true, "First name is required"],
     },
-    paymentSlipUrl: { type: String }, // ✅ renamed for clarity
-    shippingAddress: {
-      firstName: { type: String, required: true },
-      lastName: { type: String, required: true },
-      email: { type: String, required: true },
-      phone: { type: String, required: true },
-      address: { type: String, required: true },
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      zipCode: { type: String, required: true },
+    lastName: {
+      type: String,
+      required: [true, "Last name is required"],
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+    },
+    phone: {
+      type: String,
+      required: [true, "Phone is required"],
+    },
+    address: {
+      type: String,
+      required: [true, "Address is required"],
+    },
+    city: {
+      type: String,
+      required: [true, "City is required"],
+    },
+    state: {
+      type: String,
+      required: [true, "State is required"],
+    },
+    zipCode: {
+      type: String,
+      required: [true, "Zip code is required"],
+    },
+    country: {
+      type: String,
+      default: "Thailand",
     },
   },
-  { timestamps: true }
-);
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  paidAt: Date,
+  updatedAt: Date,
+});
 
-// Prevent model overwrite upon hot reload in Next.js
-export const Order = models.Order || model<IOrder>("Order", OrderSchema);
+export const Order = mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);

@@ -19,7 +19,8 @@ import {
   ShoppingBag,
   Filter,
   Search,
-  X
+  X,
+  Trash2
 } from "lucide-react";
 
 interface Order {
@@ -32,7 +33,8 @@ interface Order {
   };
   quantity: number;
   totalPrice: number;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  status: "pending_payment" | "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" | "rejected";
+  stripePaymentIntentId?: string;
   paymentSlipUrl?: string;
   shippingAddress: {
     firstName: string;
@@ -43,6 +45,7 @@ interface Order {
     city: string;
     state: string;
     zipCode: string;
+    country: string;
   };
   createdAt: string;
 }
@@ -55,9 +58,15 @@ interface ModalProps {
   onReject: () => void;
 }
 
+interface DeleteModalProps {
+  orderId: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
 function ImageModal({ src, alt, onClose, onConfirm, onReject }: ModalProps) {
   return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-auto py-10">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-auto py-10">
       <div className="relative bg-white rounded-lg shadow-lg max-w-3xl w-full mx-4">
         <button
           onClick={onClose}
@@ -93,9 +102,41 @@ function ImageModal({ src, alt, onClose, onConfirm, onReject }: ModalProps) {
   );
 }
 
+function DeleteModal({ onClose, onConfirm }: DeleteModalProps) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
+        <p className="text-gray-600 mb-6">Are you sure you want to delete this order? This action cannot be undone.</p>
+        <div className="flex justify-end gap-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Status configuration with icons and colors
 function getStatusConfig(status: string) {
   switch (status) {
+    case "pending_payment":
+      return {
+        icon: Clock,
+        color: "bg-yellow-50 text-yellow-700 border-yellow-200",
+        bgColor: "bg-yellow-100",
+        textColor: "text-yellow-800"
+      };
     case "pending":
       return {
         icon: Clock,
@@ -125,6 +166,7 @@ function getStatusConfig(status: string) {
         textColor: "text-green-800"
       };
     case "cancelled":
+    case "rejected":
       return {
         icon: XCircle,
         color: "bg-red-50 text-red-700 border-red-200",
@@ -150,6 +192,8 @@ export default function AdminOrdersPage() {
   const router = useRouter();
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [deleteModalOrderId, setDeleteModalOrderId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null); // Track deleting state
 
   useEffect(() => {
     async function fetchOrders() {
@@ -157,6 +201,7 @@ export default function AdminOrdersPage() {
 
       if (!token) {
         router.replace("/login");
+        return;
       }
 
       try {
@@ -170,7 +215,7 @@ export default function AdminOrdersPage() {
           setOrders(data.orders);
         } else if (res.status === 401) {
           setError("Unauthorized. Please log in again.");
-          // optionally redirect to login
+          router.replace("/login");
         } else {
           setError(data.error || "Failed to fetch orders");
         }
@@ -186,10 +231,10 @@ export default function AdminOrdersPage() {
   }, [router]);
 
   const filteredOrders = orders.filter(order => {
-  const productName = order.productId?.name ?? "";
-  const matchesSearch = productName.toLowerCase().includes(searchTerm.toLowerCase());
-  const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-  return matchesSearch && matchesStatus;
+    const productName = order.productId?.name ?? "";
+    const matchesSearch = productName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
   // Handler to confirm payment
@@ -198,6 +243,11 @@ export default function AdminOrdersPage() {
 
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
       const res = await fetch(`/api/admin/orders/confirm/${selectedOrderId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -211,12 +261,7 @@ export default function AdminOrdersPage() {
         );
         alert("Payment confirmed! Order is now ready for delivery.");
       } else {
-        let data;
-        try {
-          data = await res.json();
-        } catch {
-          data = { error: "Failed to confirm payment" };
-        }
+        const data = await res.json();
         alert(data.error || "Failed to confirm payment");
       }
     } catch (err) {
@@ -234,6 +279,11 @@ export default function AdminOrdersPage() {
 
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
       const res = await fetch(`/api/admin/orders/cancel/${selectedOrderId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -256,6 +306,58 @@ export default function AdminOrdersPage() {
     } finally {
       setModalImage(null);
       setSelectedOrderId(null);
+    }
+  };
+
+  // Handler to delete order
+  const handleDeleteOrder = async (orderId: string) => {
+    setDeleteModalOrderId(orderId); // Show modal instead of confirm
+  };
+
+  // Handler for confirming deletion
+  const handleConfirmDelete = async (orderId: string) => {
+    if (!orderId) return;
+
+    setIsDeleting(orderId); // Set loading state
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      // ✅ FIX: remove "delete" in the path
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        setOrders((prev) => prev.filter((o) => o._id !== orderId));
+        alert("Order deleted successfully.");
+      } else {
+        const data = await res.json();
+        switch (res.status) {
+          case 401:
+            alert("Unauthorized: Please log in again.");
+            router.replace("/login");
+            break;
+          case 403:
+            alert("Unauthorized: Admin access required.");
+            break;
+          case 404:
+            alert("Order not found.");
+            break;
+          default:
+            alert(data.error || "Failed to delete order.");
+        }
+      }
+    } catch (err) {
+      console.error(`Error deleting order ${orderId}:`, err);
+      alert("Error deleting order. Please try again.");
+    } finally {
+      setIsDeleting(null);
+      setDeleteModalOrderId(null);
     }
   };
 
@@ -295,11 +397,13 @@ export default function AdminOrdersPage() {
                 className="pl-10 pr-8 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none bg-white min-w-[150px]"
               >
                 <option value="all">All Status</option>
+                <option value="pending_payment">Pending Payment</option>
                 <option value="pending">Pending</option>
                 <option value="confirmed">Confirmed</option>
                 <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
                 <option value="cancelled">Cancelled</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
           </div>
@@ -364,7 +468,6 @@ export default function AdminOrdersPage() {
                               <span className="font-semibold text-gray-900">
                                 ฿{(order.totalPrice ?? 0).toFixed(2)}
                               </span>
-
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
                                 {new Date(order.createdAt).toLocaleDateString()}
@@ -372,9 +475,19 @@ export default function AdminOrdersPage() {
                             </div>
                           </div>
                           
-                          <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border font-medium text-sm ${statusConfig.color}`}>
-                            <StatusIcon className="h-4 w-4" />
-                            {order.status.toUpperCase()}
+                          <div className="flex items-center gap-4">
+                            <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border font-medium text-sm ${statusConfig.color}`}>
+                              <StatusIcon className="h-4 w-4" />
+                              {order.status.replace("_", " ").toUpperCase()}
+                            </div>
+                            <button
+                              onClick={() => handleDeleteOrder(order._id)}
+                              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Delete Order"
+                              disabled={isDeleting === order._id}
+                            >
+                              <Trash2 size={20} />
+                            </button>
                           </div>
                         </div>
 
@@ -393,12 +506,10 @@ export default function AdminOrdersPage() {
                                   {order.shippingAddress?.firstName ?? "Unknown"} {order.shippingAddress?.lastName ?? ""}
                                 </span>
                               </div>
-
                               <div className="flex items-center gap-2">
                                 <Mail className="h-3 w-3 text-gray-500" />
                                 <span>{order.shippingAddress?.email ?? "No email provided"}</span>
                               </div>
-
                               <div className="flex items-center gap-2">
                                 <Phone className="h-3 w-3 text-gray-500" />
                                 <span>{order.shippingAddress?.phone ?? "No phone number"}</span>
@@ -408,6 +519,7 @@ export default function AdminOrdersPage() {
                                 <span className="leading-relaxed">
                                   {order.shippingAddress?.address}<br />
                                   {order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}
+                                  {order.shippingAddress?.country && <><br />{order.shippingAddress.country}</>}
                                 </span>
                               </div>
                             </div>
@@ -425,7 +537,8 @@ export default function AdminOrdersPage() {
                                 <div
                                   className="w-24 h-24 relative rounded-lg overflow-hidden bg-white border cursor-pointer"
                                   onClick={() => {
-                                    setModalImage(order.paymentSlipUrl!);setSelectedOrderId(order._id);
+                                    setModalImage(order.paymentSlipUrl!);
+                                    setSelectedOrderId(order._id);
                                   }}
                                 >
                                   <Image
@@ -443,19 +556,6 @@ export default function AdminOrdersPage() {
                                 <span>Awaiting payment confirmation</span>
                               </div>
                             )}
-
-                            {modalImage && selectedOrderId && (
-                              <ImageModal
-                                src={modalImage}
-                                onClose={() => {
-                                  setModalImage(null);
-                                  setSelectedOrderId(null);
-                                }}
-                                onConfirm={handleConfirmPayment}
-                                onReject={handleRejectPayment}
-                              />
-                            )}
-
                           </div>
                         </div>
                       </div>
@@ -467,6 +567,26 @@ export default function AdminOrdersPage() {
           </div>
         )}
       </div>
+
+      {modalImage && selectedOrderId && (
+        <ImageModal
+          src={modalImage}
+          onClose={() => {
+            setModalImage(null);
+            setSelectedOrderId(null);
+          }}
+          onConfirm={handleConfirmPayment}
+          onReject={handleRejectPayment}
+        />
+      )}
+
+      {deleteModalOrderId && (
+        <DeleteModal
+          orderId={deleteModalOrderId}
+          onClose={() => setDeleteModalOrderId(null)}
+          onConfirm={() => handleConfirmDelete(deleteModalOrderId)}
+        />
+      )}
     </div>
   );
 }

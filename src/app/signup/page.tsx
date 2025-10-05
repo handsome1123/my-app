@@ -26,8 +26,66 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-
   const router = useRouter();
+
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setIsLoading(true);
+  //   setError('');
+  //   setSuccess('');
+
+  //   try {
+  //     // Create formData object from state variables
+  //     const formData = {
+  //       name,
+  //       email,
+  //       password
+  //     };
+
+  //     const response = await fetch('/api/auth/signup', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify(formData),
+  //     });
+
+  //     const data = await response.json();
+
+  //     if (response.ok) {
+  //       // ✅ Success
+  //       localStorage.setItem('token', data.token);
+  //       localStorage.setItem('user', JSON.stringify(data.user));
+        
+  //       // You'll need to get setUser from context or props
+  //       // setUser(data.user); // updates navbar automatically
+
+  //       // setSuccess('Registration successful! Redirecting...');
+  //       setSuccess("Verification email sent! Please check your inbox to complete registration.");
+
+  //       // Add delay before redirect
+  //       setTimeout(() => {
+  //         // Redirect based on role
+  //         if (data.user.role === 'admin') {
+  //           router.push('/admin');
+  //         } else if (data.user.role === 'seller') {
+  //           router.push('/seller/dashboard');
+  //         } else {
+  //           router.push('/buyer/dashboard'); // fallback for buyers
+  //         }
+  //       }, 1500);
+        
+  //     } else {
+  //       // ❌ API returned an error
+  //       setError(data.error || 'Signup failed. Please try again.');
+  //     }
+  //   } catch (err) {
+  //     console.error('Signup error:', err);
+  //     setError('Something went wrong. Please try again.');
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,47 +94,23 @@ export default function SignupPage() {
     setSuccess('');
 
     try {
-      // Create formData object from state variables
-      const formData = {
-        name,
-        email,
-        password
-      };
+      const formData = { name, email, password };
 
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // ✅ Success
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // You'll need to get setUser from context or props
-        // setUser(data.user); // updates navbar automatically
+        // ✅ User is not logged in yet — only verification email sent
+        setSuccess("Verification email sent! Please check your inbox to complete registration.");
 
-        setSuccess('Registration successful! Redirecting...');
-
-        // Add delay before redirect
-        setTimeout(() => {
-          // Redirect based on role
-          if (data.user.role === 'admin') {
-            router.push('/admin');
-          } else if (data.user.role === 'seller') {
-            router.push('/seller/dashboard');
-          } else {
-            router.push('/buyer/dashboard'); // fallback for buyers
-          }
-        }, 1500);
-        
+        // Don’t store anything in localStorage yet (since not verified)
+        // No redirect yet — wait for email confirmation
       } else {
-        // ❌ API returned an error
         setError(data.error || 'Signup failed. Please try again.');
       }
     } catch (err) {

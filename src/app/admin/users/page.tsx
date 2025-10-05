@@ -7,6 +7,7 @@ import {
   Search,
   Mail,
   Calendar,
+  Trash2,
   Phone
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,7 @@ export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState<string | null>(null); // Track deleting state
 
   useEffect(() => {
     async function fetchUsers() {
@@ -85,6 +87,51 @@ export default function AdminUsers() {
       console.error("Error updating role", err);
     }
   };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!userId) return;
+
+    setIsDeleting(userId);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        setUsers((prev) => prev.filter((u) => u._id !== userId));
+        alert("User deleted successfully.");
+      } else {
+        const data = await res.json();
+        switch (res.status) {
+          case 401:
+            alert("Unauthorized: Please log in again.");
+            router.replace("/login");
+            break;
+          case 403:
+            alert("Unauthorized: Admin access required.");
+            break;
+          case 404:
+            alert("User not found.");
+            break;
+          default:
+            alert(data.error || "Failed to delete user.");
+        }
+      }
+    } catch (err) {
+      console.error(`Error deleting user ${userId}:`, err);
+      alert("Error deleting user. Please try again.");
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
 
   if (loading) return <p className="text-center mt-10">Loading users...</p>;
   if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
@@ -150,6 +197,7 @@ export default function AdminUsers() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delete</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -214,6 +262,16 @@ export default function AdminUsers() {
                         <Calendar className="h-3 w-3 mr-1" />
                         {new Date(user.createdAt).toLocaleDateString()}
                       </div>
+                    </td>
+                    <td>
+                            <button
+                              onClick={() => handleDeleteUser(user._id)}
+                              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Delete User"
+                              disabled={isDeleting === user._id}
+                            >
+                              <Trash2 size={20} />
+                            </button>
                     </td>
                   </tr>
                 ))}

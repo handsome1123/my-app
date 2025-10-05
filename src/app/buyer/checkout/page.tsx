@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { 
@@ -14,13 +14,26 @@ import {
   MapPin,
   Phone,
   Mail,
-  Upload,
-  X,
-  FileText,
-  Camera,
-  Clock,
-  Bell
+  CreditCard,
+  Lock,
+  QrCode,
+  XCircle
 } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
+
+// Type definitions for PromptPay
+interface PromptPayDisplayQRCode {
+  data?: string;
+  hosted_instructions_url?: string;
+  image_url_png?: string;
+  image_url_svg?: string;
+}
+
+interface PromptPayNextAction {
+  type: 'promptpay_display_qr_code';
+  promptpay_display_qr_code: PromptPayDisplayQRCode;
+}
 
 interface Product {
   _id: string;
@@ -28,7 +41,7 @@ interface Product {
   description: string;
   price: number;
   imageUrl: string;
-  sellerId: string; // Add seller ID to get seller's email
+  sellerId: string;
 }
 
 interface CheckoutForm {
@@ -41,16 +54,20 @@ interface CheckoutForm {
   state: string;
   zipCode: string;
   country: string;
-  paymentSlip?: string;
 }
 
 interface OrderConfirmation {
   orderId: string;
-  status: 'pending_seller_confirmation' | 'confirmed' | 'rejected';
-  sellerResponse?: string;
+  status: "pending_payment" | "paid" | "confirmed" | "rejected";
+  stripePaymentIntentId?: string;
+  clientSecret: string;
 }
 
-// Loading component
+interface CancelModalProps {
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
 function CheckoutLoading() {
   return (
     <div className="min-h-screen p-6 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
@@ -62,7 +79,379 @@ function CheckoutLoading() {
   );
 }
 
-// Main checkout component that uses useSearchParams
+function CancelModal({ onClose, onConfirm }: CancelModalProps) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Cancel Order</h3>
+        <p className="text-gray-600 mb-6">Are you sure you want to cancel this order? This action cannot be undone.</p>
+        <div className="flex justify-end gap-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+          >
+            No, Keep Order
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Yes, Cancel Order
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type PaymentMethodType = "card" | "promptpay";
+
+function PaymentForm({ 
+  clientSecret, 
+  total, 
+  product, 
+  quantity, 
+  onPaymentSuccess 
+}: { 
+  clientSecret: string; 
+  total: number; 
+  product: Product; 
+  quantity: number; 
+  onPaymentSuccess: (paymentIntentId: string) => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>("promptpay");
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [availableMethods, setAvailableMethods] = useState<PaymentMethodType[]>([]);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string>("");
+
+  const generatePromptPayQR = useCallback(async () => {
+    if (!stripe || !clientSecret) return;
+
+    try {
+      const { paymentIntent: existingPI } = await stripe.retrievePaymentIntent(clientSecret);
+
+      if (existingPI?.next_action?.type === "promptpay_display_qr_code") {
+        const nextAction = existingPI.next_action as PromptPayNextAction;
+        const qrData = nextAction.promptpay_display_qr_code?.data;
+        const hostedUrl = nextAction.promptpay_display_qr_code?.hosted_instructions_url;
+
+        if (qrData) setQrCodeData(qrData);
+        if (hostedUrl) setQrCodeUrl(hostedUrl);
+        return;
+      }
+
+      const result = await stripe.confirmPromptPayPayment(clientSecret, {
+        payment_method: {
+          billing_details: {
+            email: "customer@example.com", // replace with real customer email
+          },
+        },
+        return_url: `${window.location.origin}/buyer/orders`,
+      });
+
+      if (result.error) {
+        setError(result.error.message || "Failed to generate QR code");
+      } else if (result.paymentIntent?.next_action?.type === "promptpay_display_qr_code") {
+        const nextAction = result.paymentIntent.next_action as PromptPayNextAction;
+        const qrData = nextAction.promptpay_display_qr_code?.data;
+        const hostedUrl = nextAction.promptpay_display_qr_code?.hosted_instructions_url;
+
+        if (qrData) setQrCodeData(qrData);
+        if (hostedUrl) setQrCodeUrl(hostedUrl);
+      }
+    } catch (err) {
+      console.error("Error generating PromptPay QR:", err);
+      setError("Failed to generate QR code");
+    }
+  }, [stripe, clientSecret]);
+
+  useEffect(() => {
+    if (!stripe || !clientSecret) return;
+
+    stripe.retrievePaymentIntent(clientSecret)
+      .then(({ paymentIntent }) => {
+        if (paymentIntent) {
+          const methods = paymentIntent.payment_method_types as string[];
+          const supportedMethods = methods.filter((m): m is PaymentMethodType =>
+            ["card", "promptpay"].includes(m)
+          );
+          setAvailableMethods(supportedMethods);
+
+          if (supportedMethods.includes("promptpay")) {
+            setSelectedMethod("promptpay");
+          } else if (supportedMethods.includes("card")) {
+            setSelectedMethod("card");
+          }
+        }
+      })
+      .catch(err => {
+        console.error("Failed to retrieve payment intent:", err);
+        setError("Unable to load payment options.");
+      });
+  }, [stripe, clientSecret]);
+
+  useEffect(() => {
+    if (selectedMethod === "promptpay" && stripe && clientSecret) {
+      generatePromptPayQR();
+    }
+  }, [selectedMethod, stripe, clientSecret, generatePromptPayQR]);
+
+  useEffect(() => {
+    if (selectedMethod !== "promptpay" || !stripe || !clientSecret) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+
+        if (paymentIntent) {
+          setPaymentStatus(paymentIntent.status);
+
+          if (paymentIntent.status === "succeeded") {
+            clearInterval(pollInterval);
+            onPaymentSuccess(paymentIntent.id);
+          } else if (paymentIntent.status === "canceled") {
+            clearInterval(pollInterval);
+            setError("Payment was canceled or failed.");
+          }
+        }
+      } catch (err) {
+        console.error("Error polling payment status:", err);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [selectedMethod, stripe, clientSecret, onPaymentSuccess]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      setError("Payment system not ready. Please refresh.");
+      return;
+    }
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      if (selectedMethod === "card") {
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) {
+          setError("Card element not found");
+          setProcessing(false);
+          return;
+        }
+
+        const result = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+          },
+        });
+
+        if (result.error) {
+          setError(result.error.message || "Payment failed.");
+        } else if (result.paymentIntent && result.paymentIntent.status === "succeeded") {
+          onPaymentSuccess(result.paymentIntent.id);
+        }
+      } else if (selectedMethod === "promptpay") {
+        setError(null);
+        setPaymentStatus("waiting");
+      }
+    } catch (err) {
+      console.error("Payment error:", err);
+      setError("Payment processing failed.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  if (availableMethods.length === 0) {
+    return <div className="text-center p-8">Loading payment methods...</div>;
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <Shield size={20} className="text-blue-600 mt-0.5" />
+          <div>
+            <p className="font-medium text-blue-800">Secure Payment</p>
+            <p className="text-sm text-blue-600 mt-1">
+              Choose PromptPay for QR scan or Card for global payments. Processed by Stripe.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+        <div className="flex space-x-2 mb-4">
+          {availableMethods.map((method) => (
+            <button
+              key={method}
+              type="button"
+              onClick={() => setSelectedMethod(method)}
+              className={`flex-1 py-3 px-4 rounded-lg transition-colors ${
+                selectedMethod === method
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {method === "promptpay" ? (
+                <QrCode size={20} className="mx-auto mb-1" />
+              ) : (
+                <CreditCard size={20} className="mx-auto mb-1" />
+              )}
+              <span className="block text-sm font-medium">
+                {method === "promptpay" ? "PromptPay (QR)" : "Card"}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4">
+          {selectedMethod === "promptpay" ? (
+            <div className="min-h-[350px] flex flex-col items-center justify-center bg-white rounded-lg p-6">
+              <QrCode size={48} className="text-blue-600 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Scan to Pay with PromptPay</h3>
+              <p className="text-sm text-gray-600 text-center mb-6">
+                Open your banking app and scan the QR code to complete payment
+              </p>
+              {qrCodeData ? (
+                <div className="w-full flex flex-col items-center">
+                  <div className="bg-white p-4 rounded-lg border-2 border-blue-600 mb-4">
+                    <Image
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrCodeData)}`}
+                      alt="PromptPay QR Code"
+                      width={256}
+                      height={256}
+                      className="w-64 h-64"
+                      unoptimized
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 text-center mb-2">
+                    Amount: ฿{total.toFixed(2)}
+                  </p>
+                  {paymentStatus === "waiting" && (
+                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg w-full">
+                      <p className="text-sm text-yellow-800 text-center flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-800"></div>
+                        Waiting for payment confirmation...
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : qrCodeUrl ? (
+                <div className="w-full">
+                  <iframe
+                    src={qrCodeUrl}
+                    className="w-full h-80 border-0 rounded-lg"
+                    title="PromptPay QR Code"
+                  />
+                  {paymentStatus === "waiting" && (
+                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800 text-center flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-800"></div>
+                        Waiting for payment confirmation...
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-500"></div>
+                  Generating QR code...
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="min-h-[100px] p-4 border border-gray-300 rounded-lg bg-white">
+              <CardElement
+                options={{
+                  style: {
+                    base: {
+                      fontSize: "16px",
+                      color: "#1f2937",
+                      "::placeholder": {
+                        color: "#9ca3af",
+                      },
+                    },
+                    invalid: {
+                      color: "#ef4444",
+                    },
+                  },
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
+      <div className="bg-gray-50 rounded-lg p-4">
+        <h4 className="font-semibold text-gray-900 mb-3">Payment Summary</h4>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Product: {product.name}</span>
+            <span>฿{product.price.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Quantity:</span>
+            <span>{quantity}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Shipping:</span>
+            <span>Free</span>
+          </div>
+          <div className="border-t pt-2">
+            <div className="flex justify-between font-semibold">
+              <span>Total Amount:</span>
+              <span className="text-blue-600">฿{total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {selectedMethod === "card" && (
+        <button
+          type="submit"
+          disabled={processing}
+          className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2"
+        >
+          {processing ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              Processing Payment...
+            </>
+          ) : (
+            <>
+              <Lock size={20} />
+              Pay ฿{total.toFixed(2)} Securely
+            </>
+          )}
+        </button>
+      )}
+
+      {selectedMethod === "promptpay" && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800 text-center">
+            After scanning and paying, your order will be automatically confirmed.
+          </p>
+        </div>
+      )}
+    </form>
+  );
+}
+
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -74,12 +463,13 @@ function CheckoutContent() {
   const [error, setError] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [paymentSlip, setPaymentSlip] = useState<File | null>(null);
-  const [paymentSlipPreview, setPaymentSlipPreview] = useState<string>("");
-  const [currentStep, setCurrentStep] = useState<'form' | 'waiting_confirmation' | 'payment' | 'slip'>('form');
+  const [currentStep, setCurrentStep] = useState<"form" | "payment">("form");
   const [orderConfirmation, setOrderConfirmation] = useState<OrderConfirmation | null>(null);
-  const [ , setWaitingForSeller] = useState(false);
-  
+  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null);
+  const [clientSecret, setClientSecret] = useState("");
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
+
   const [formData, setFormData] = useState<CheckoutForm>({
     firstName: "",
     lastName: "",
@@ -89,14 +479,16 @@ function CheckoutContent() {
     city: "",
     state: "",
     zipCode: "",
-    country: "",
-    paymentSlip: ""
+    country: "Thailand"
   });
 
-  const [qrImage, setQrImage] = useState(null);
-  const [paymentInfo, setPaymentInfo] = useState<{bankName: string, accountNumber: string, accountName: string} | null>(null);
+  useEffect(() => {
+    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    if (publishableKey) {
+      setStripePromise(loadStripe(publishableKey));
+    }
+  }, []);
 
-  // Fetch product
   useEffect(() => {
     async function fetchProduct() {
       if (!productId) return;
@@ -114,67 +506,6 @@ function CheckoutContent() {
     fetchProduct();
   }, [productId]);
 
-  // Fetch PromptPay QR code (only when seller confirms availability)
-  useEffect(() => {
-    async function fetchQR() {
-      if (!product || !product.price || currentStep !== 'payment') return;
-
-      try {
-        const res = await fetch(`/api/seller/promptpay?amount=${product.price * quantity}`);
-        const data = await res.json();
-        if (res.ok || data.qrImage) {
-          setQrImage(data.qrImage);
-          setPaymentInfo({
-            bankName: data.bankName,
-            accountNumber: data.accountNumber,
-            accountName: data.accountName
-          });
-        }
-      } catch {
-        console.error("Failed to fetch QR code");
-      }
-    }
-
-    fetchQR();
-  }, [product, quantity, currentStep]);
-
-  // Poll for seller confirmation
-  useEffect(() => {
-    let pollInterval: NodeJS.Timeout;
-    
-    if (currentStep === 'waiting_confirmation' && orderConfirmation?.orderId) {
-      pollInterval = setInterval(async () => {
-        try {
-          const token = localStorage.getItem("token");
-          const res = await fetch(`/api/buyer/orders/${orderConfirmation.orderId}/status`, {
-            headers: {
-              "Authorization": `Bearer ${token}`
-            }
-          });
-          
-          const data = await res.json();
-          if (res.ok) {
-            if (data.status === 'confirmed') {
-              setCurrentStep('payment');
-              setWaitingForSeller(false);
-              clearInterval(pollInterval);
-            } else if (data.status === 'rejected') {
-              setError(data.sellerResponse || 'Seller rejected the order. Product may not be available.');
-              setWaitingForSeller(false);
-              clearInterval(pollInterval);
-            }
-          }
-        } catch (err) {
-          console.error('Error polling order status:', err);
-        }
-      }, 5000); // Poll every 5 seconds
-    }
-
-    return () => {
-      if (pollInterval) clearInterval(pollInterval);
-    };
-  }, [currentStep, orderConfirmation?.orderId]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -183,45 +514,16 @@ function CheckoutContent() {
     }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
-      setError("Please select an image less than 5MB");
-      return;
-    }
-
-    if (file) {
-      setPaymentSlip(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPaymentSlipPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removePaymentSlip = () => {
-    setPaymentSlip(null);
-    setPaymentSlipPreview("");
-  };
-
-  // Modified function to send notification to seller instead of proceeding directly to payment
-  const handleSendSellerNotification = async () => {
+  const handleProceedToPayment = async () => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     if (!token) {
-      alert("Please login or register before making a purchase.");
+      setError("Please login or register before making a purchase.");
       return;
     }
 
-    // Basic form validation
-    const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
-    const isFormValid = requiredFields.every(field => {
-      const value = formData[field as keyof CheckoutForm];
-      return typeof value === 'string' && value.trim() !== '';
-    });
+    const requiredFields = ["firstName", "lastName", "email", "phone", "address", "city", "state", "zipCode"];
+    const isFormValid = requiredFields.every(field => formData[field as keyof CheckoutForm].trim() !== "");
 
     if (!isFormValid) {
       setError("Please fill in all required fields");
@@ -232,74 +534,125 @@ function CheckoutContent() {
     setProcessing(true);
 
     try {
-      // Create preliminary order and send notification to seller
-      const res = await fetch('/api/buyer/request-seller-confirmation', {
-        method: 'POST',
+      const res = await fetch("/api/buyer/create-payment-intent", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           productId,
           quantity,
-          customerInfo: formData
+          customerInfo: formData,
+          amount: product ? Math.round(product.price * quantity * 100) : 0,
+          paymentMethodTypes: ["card", "promptpay"]
         })
       });
 
       const data = await res.json();
       
       if (res.ok) {
-        setOrderConfirmation(data);
-        setCurrentStep('waiting_confirmation');
-        setWaitingForSeller(true);
+        setOrderConfirmation({ 
+          orderId: data.orderId, 
+          status: data.status, 
+          stripePaymentIntentId: data.stripePaymentIntentId, 
+          clientSecret: data.clientSecret 
+        });
+        setClientSecret(data.clientSecret);
+        setCurrentStep("payment");
       } else {
-        setError(data.error || 'Failed to send notification to seller');
+        setError(data.error || "Failed to create payment intent");
       }
     } catch (err) {
-      console.error('Error sending seller notification:', err);
-      setError('Something went wrong while notifying the seller');
+      console.error("Error creating payment intent:", err);
+      setError("Something went wrong while setting up payment");
     } finally {
       setProcessing(false);
     }
   };
 
-  const handleProceedToSlip = () => {
-    setCurrentStep('slip');
-  };
-
-  async function handleConfirmPurchase() {
-    if (!productId || !product || !paymentSlip || !orderConfirmation?.orderId) return;
-
-    setProcessing(true);
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please login again.");
+        router.push("/login");
+        return;
+      }
 
-      // Create FormData for file upload
-      const orderData = new FormData();
-      orderData.append("orderId", orderConfirmation.orderId);
-      orderData.append("paymentSlip", paymentSlip);
-
-      const res = await fetch(`/api/buyer/complete-order`, {
+      const res = await fetch("/api/buyer/confirm-payment", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
-        body: orderData,
+        body: JSON.stringify({
+          orderId: orderConfirmation?.orderId,
+          paymentIntentId
+        })
       });
 
       const data = await res.json();
       if (res.ok) {
         setOrderSuccess(true);
+        await fetch("/api/seller/notify-new-order", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            orderId: orderConfirmation?.orderId
+          })
+        });
       } else {
-        setError(data.error || "Failed to complete order");
+        setError(data.error || "Failed to confirm payment");
       }
     } catch (err) {
-      console.error(err);
-      setError("Something went wrong during checkout.");
-    } finally {
-      setProcessing(false);
+      console.error("Error confirming payment:", err);
+      setError("Payment confirmation failed");
     }
-  }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!orderConfirmation?.orderId) {
+      setError("No order to cancel.");
+      return;
+    }
+
+    setIsCanceling(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please login again.");
+        router.push("/login");
+        return;
+      }
+
+      const res = await fetch(`/api/admin/orders/delete/${orderConfirmation.orderId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        setOrderSuccess(false);
+        setCurrentStep("form");
+        setOrderConfirmation(null);
+        setClientSecret("");
+        alert("Order canceled successfully.");
+        router.push("/buyer/products");
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to cancel order.");
+      }
+    } catch (err) {
+      console.error("Error canceling order:", err);
+      setError("Error canceling order. Please try again.");
+    } finally {
+      setIsCanceling(false);
+      setCancelModalOpen(false);
+    }
+  };
 
   const subtotal = product ? product.price * quantity : 0;
   const shipping = 0;
@@ -307,7 +660,7 @@ function CheckoutContent() {
 
   if (loading) return <CheckoutLoading />;
   
-  if (error) {
+  if (error && currentStep === "form") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
@@ -353,16 +706,16 @@ function CheckoutContent() {
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
           <CheckCircle2 size={64} className="text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h2>
-          <p className="text-gray-600 mb-6">Thank you for your purchase. We&apos;ll verify your payment slip and process your order shortly.</p>
+          <p className="text-gray-600 mb-6">Thank you for your purchase. Your payment has been processed and the seller has been notified.</p>
           <div className="space-y-3">
             <button 
-              onClick={() => router.push('/buyer/orders')}
+              onClick={() => router.push("/buyer/orders")}
               className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
             >
               View My Orders
             </button>
             <button 
-              onClick={() => router.push('/buyer/products')}
+              onClick={() => router.push("/buyer/products")}
               className="w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
             >
               Continue Shopping
@@ -375,15 +728,12 @@ function CheckoutContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <button 
               onClick={() => {
-                if (currentStep === 'waiting_confirmation') setCurrentStep('form');
-                else if (currentStep === 'payment') setCurrentStep('waiting_confirmation');
-                else if (currentStep === 'slip') setCurrentStep('payment');
+                if (currentStep === "payment") setCurrentStep("form");
                 else router.back();
               }}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -392,22 +742,28 @@ function CheckoutContent() {
               <span>Back</span>
             </button>
             <div className="flex items-center gap-4">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'form' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>1</div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'waiting_confirmation' ? 'bg-yellow-500 text-white' : currentStep === 'payment' || currentStep === 'slip' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>2</div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'payment' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>3</div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'slip' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>4</div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === "form" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-600"}`}>1</div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === "payment" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-600"}`}>2</div>
             </div>
-            <div className="w-16"></div>
+            <div className="w-16">
+              {orderConfirmation && (
+                <button
+                  onClick={() => setCancelModalOpen(true)}
+                  className="flex items-center gap-2 text-red-600 hover:text-red-800 transition-colors"
+                  disabled={isCanceling}
+                >
+                  <XCircle size={20} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
           <div className="lg:col-span-2">
-            {/* Step 1: Customer Information */}
-            {currentStep === 'form' && (
+            {currentStep === "form" && (
               <div className="space-y-6">
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <div className="flex items-center gap-3 mb-6">
@@ -526,229 +882,49 @@ function CheckoutContent() {
                 </div>
 
                 <button
-                  onClick={handleSendSellerNotification}
+                  onClick={handleProceedToPayment}
                   disabled={processing}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2"
                 >
                   {processing ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Notifying Seller...
+                      Setting up payment...
                     </>
                   ) : (
                     <>
-                      <Bell size={20} />
-                      Notify Seller & Check Availability
+                      <CreditCard size={20} />
+                      Proceed to Payment
                     </>
                   )}
                 </button>
               </div>
             )}
 
-            {/* Step 2: Waiting for Seller Confirmation */}
-            {currentStep === 'waiting_confirmation' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <Clock size={24} className="text-yellow-500" />
-                  <h2 className="text-xl font-semibold text-gray-900">Waiting for Seller Confirmation</h2>
+            {currentStep === "payment" && stripePromise && clientSecret && orderConfirmation && product && (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <CreditCard size={24} className="text-blue-600" />
+                    <h2 className="text-xl font-semibold text-gray-900">Payment Information</h2>
+                    <Lock size={16} className="text-gray-400" />
+                  </div>
+                  <PaymentForm 
+                    clientSecret={clientSecret}
+                    total={total}
+                    product={product}
+                    quantity={quantity}
+                    onPaymentSuccess={handlePaymentSuccess}
+                  />
                 </div>
-                
-                <div className="text-center space-y-6">
-                  <div className="bg-yellow-50 rounded-2xl p-8">
-                    <div className="animate-pulse flex justify-center mb-4">
-                      <Mail size={64} className="text-yellow-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      Notification Sent to Seller
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      We&apos;ve sent your order details to the seller. They will confirm product availability shortly.
-                    </p>
-                    <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500"></div>
-                      <span>Checking every 5 seconds...</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-800 mb-2">Order Details Sent:</h4>
-                    <div className="text-left space-y-1 text-sm text-blue-700">
-                      <p><strong>Product:</strong> {product.name}</p>
-                      <p><strong>Quantity:</strong> {quantity}</p>
-                      <p><strong>Customer:</strong> {formData.firstName} {formData.lastName}</p>
-                      <p><strong>Email:</strong> {formData.email}</p>
-                      <p><strong>Phone:</strong> {formData.phone}</p>
-                      <p><strong>Address:</strong> {formData.address}, {formData.city}, {formData.state} {formData.zipCode}</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">
-                      <strong>What happens next?</strong><br />
-                      The seller will receive an email with your order details and will confirm if the product is available. 
-                      Once confirmed, you&apos;ll be able to proceed with payment.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: QR Code Payment (only after seller confirmation) */}
-            {currentStep === 'payment' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <CheckCircle2 size={24} className="text-green-600" />
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Seller Confirmed - Scan QR Code to Pay</h2>
-                    <p className="text-sm text-green-600">Product is available and ready for purchase!</p>
-                  </div>
-                </div>
-                
-                <div className="text-center space-y-6">
-                  <div className="bg-gray-50 rounded-2xl p-8 inline-block">
-                    {qrImage ? (
-                      <div className="mt-4">
-                        <h3 className="font-semibold mb-2">Scan to Pay with PromptPay</h3>
-                        <Image src={qrImage} alt="PromptPay QR Code" 
-                        width={256} height={256} 
-                        className="w-64 h-64 mx-auto" />
-
-                        {paymentInfo && (
-                          <div className="mt-2 text-center text-gray-700">
-                            <p>{paymentInfo.bankName}</p>
-                            <p>{paymentInfo.accountNumber}</p>
-                            <p>{paymentInfo.accountName}</p>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <p>Generating QR code...</p>
-                    )}
-                  </div>
-                  
-                  <div className="bg-blue-50 rounded-lg p-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">Payment Details</h3>
-                    <div className="space-y-2 text-left">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Bank:</span>
-                        <span className="font-medium">{paymentInfo?.bankName || ''}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Account:</span>
-                        <span className="font-medium">{paymentInfo?.accountNumber || ''}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Account Name:</span>
-                        <span className="font-medium">{paymentInfo?.accountName || ''}</span>
-                      </div>
-                      <div className="border-t pt-2 mt-4">
-                        <div className="flex justify-between text-lg font-bold">
-                          <span>Amount to Pay:</span>
-                          <span className="text-green-600">฿{total.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Important:</strong> After making payment, you&apos;ll need to upload your payment slip in the next step.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleProceedToSlip}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2"
-                  >
-                    <FileText size={20} />
-                    I&apos;ve Made the Payment - Upload Slip
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Upload Payment Slip */}
-            {currentStep === 'slip' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <Upload size={24} className="text-blue-600" />
-                  <h2 className="text-xl font-semibold text-gray-900">Upload Payment Slip</h2>
-                </div>
-
-                <div className="space-y-6">
-                  {!paymentSlip ? (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                      <div className="space-y-4">
-                        <Camera size={48} className="text-gray-400 mx-auto" />
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-900 mb-2">Upload Payment Slip</h3>
-                          <p className="text-gray-500 mb-4">
-                            Take a photo or upload an image of your payment slip
-                          </p>
-                          <label className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg cursor-pointer inline-flex items-center gap-2 transition-colors">
-                            <Upload size={20} />
-                            Choose File
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleFileUpload}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                        <p className="text-xs text-gray-400">
-                          Supported formats: JPG, PNG, GIF (Max 5MB)
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="relative bg-gray-100 rounded-lg p-4">
-                        <button
-                          onClick={removePaymentSlip}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                        >
-                          <X size={16} />
-                        </button>
-                        <Image
-                          src={paymentSlipPreview || "/placeholder.jpg"}
-                          alt="Payment Slip"
-                          className="w-full max-w-md mx-auto rounded-lg"
-                          width={400}
-                          height={400}
-                        />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-green-600 font-medium mb-2">✓ Payment slip uploaded successfully</p>
-                        <p className="text-sm text-gray-500">File: {paymentSlip.name}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentSlip && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <CheckCircle2 size={20} className="text-green-600 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-green-800">Ready to place order</p>
-                          <p className="text-sm text-green-600 mt-1">
-                            Your payment slip has been uploaded. Click &apos;Complete Order&apos; to finalize your purchase.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              </Elements>
             )}
           </div>
 
-          {/* Order Summary - Sticky Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
               
-              {/* Product Details */}
               <div className="flex gap-4 mb-6 pb-6 border-b">
                 <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100">
                   <Image
@@ -765,7 +941,6 @@ function CheckoutContent() {
                 </div>
               </div>
 
-              {/* Price Breakdown */}
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
@@ -783,47 +958,7 @@ function CheckoutContent() {
                 </div>
               </div>
 
-              {/* Status Indicators */}
-              {currentStep === 'form' && (
-                <div className="bg-blue-50 rounded-lg p-4 mb-6">
-                  <div className="flex items-center gap-2 text-blue-700">
-                    <User size={16} />
-                    <span className="text-sm font-medium">Fill in your information</span>
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 'waiting_confirmation' && (
-                <div className="bg-yellow-50 rounded-lg p-4 mb-6">
-                  <div className="flex items-center gap-2 text-yellow-700">
-                    <Clock size={16} />
-                    <span className="text-sm font-medium">Waiting for seller confirmation...</span>
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 'payment' && (
-                <div className="bg-green-50 rounded-lg p-4 mb-6">
-                  <div className="flex items-center gap-2 text-green-700">
-                    <CheckCircle2 size={16} />
-                    <span className="text-sm font-medium">Confirmed! Scan QR code to pay ฿{total.toFixed(2)}</span>
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 'slip' && (
-                <div className="bg-purple-50 rounded-lg p-4 mb-6">
-                  <div className="flex items-center gap-2 text-purple-700">
-                    <Upload size={16} />
-                    <span className="text-sm font-medium">
-                      {paymentSlip ? "Payment slip uploaded" : "Upload payment slip"}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Trust Badges */}
-              <div className="grid grid-cols-3 gap-3 mb-6 text-center">
+              <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <Shield size={20} className="text-green-600 mx-auto mb-1" />
                   <p className="text-xs text-gray-600">Secure Payment</p>
@@ -837,46 +972,21 @@ function CheckoutContent() {
                   <p className="text-xs text-gray-600">Guarantee</p>
                 </div>
               </div>
-
-              {/* Action Button */}
-              {currentStep === 'slip' && (
-                <button
-                  onClick={handleConfirmPurchase}
-                  disabled={processing || !paymentSlip}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2"
-                >
-                  {processing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Processing Order...
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart size={20} />
-                      Complete Order
-                    </>
-                  )}
-                </button>
-              )}
-
-              {currentStep !== 'slip' && (
-                <div className="bg-gray-100 rounded-xl p-4 text-center">
-                  <p className="text-sm text-gray-500">
-                    {currentStep === 'form' && "Complete the form to notify seller"}
-                    {currentStep === 'waiting_confirmation' && "Waiting for seller to confirm availability"}
-                    {currentStep === 'payment' && "Complete the payment process to place your order"}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
+
+      {cancelModalOpen && (
+        <CancelModal
+          onClose={() => setCancelModalOpen(false)}
+          onConfirm={handleCancelOrder}
+        />
+      )}
     </div>
   );
 }
 
-// Main page component with Suspense wrapper
 export default function CheckoutPage() {
   return (
     <Suspense fallback={<CheckoutLoading />}>
