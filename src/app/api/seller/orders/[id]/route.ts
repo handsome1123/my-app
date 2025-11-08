@@ -1,6 +1,6 @@
 // app/api/seller/orders/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Order as OrderModel } from "@/models/Order";
 import { verifyToken } from "@/lib/jwt";
 import nodemailer from "nodemailer";
@@ -28,7 +28,7 @@ export async function PATCH(
   const { id: orderId } = await context.params;
 
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // 🔑 Verify seller token
     const authHeader = req.headers.get("Authorization");

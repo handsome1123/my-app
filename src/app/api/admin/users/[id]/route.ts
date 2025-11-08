@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import { verifyToken } from "@/lib/jwt";
 
@@ -17,7 +17,7 @@ export async function PUT(
     const { id: userId } = await params; // await params before using
     console.log("PUT /api/admin/users", userId);
 
-    await connectDB();
+    await connectToDatabase();
 
     const { role } = await req.json();
     console.log("New role:", role);
@@ -57,7 +57,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
   ) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // 🔑 Get token from Authorization header
     const authHeader = req.headers.get("authorization");

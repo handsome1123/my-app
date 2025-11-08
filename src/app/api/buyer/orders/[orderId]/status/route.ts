@@ -1,6 +1,6 @@
 // /api/buyer/orders/[orderId]/status/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Order } from "@/models/Order";
 import { verifyToken } from "@/lib/jwt";
 
@@ -14,7 +14,7 @@ export async function GET(
   context: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // 🔐 Get auth
     const authHeader = req.headers.get("authorization");
@@ -57,4 +57,3 @@ export async function GET(
     );
   }
 }
-

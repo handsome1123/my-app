@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Product } from "@/models/Product";
 import { verifyToken } from "@/lib/jwt";
 import cloudinary from "@/lib/cloudinary";
@@ -17,7 +17,7 @@ interface CloudinaryUploadResult {
 // ---------------- GET ----------------
 export async function GET(req: Request) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     const authHeader = req.headers.get("Authorization");
 
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
 // ---------------- POST ----------------
 export async function POST(req: Request) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer "))

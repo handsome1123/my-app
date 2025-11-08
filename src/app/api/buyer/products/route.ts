@@ -1,35 +1,41 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
-import { Product, ProductDocument } from "@/models/Product";
+import { connectToDatabase } from "@/lib/mongodb";
+import { Product } from "@/models/Product";
 
 export async function GET(req: Request) {
   try {
-    await connectDB();
+    const url = new URL(req.url);
+    const q = url.searchParams.get("search") || "";
+    const page = Math.max(1, Number(url.searchParams.get("page") || "1"));
+    const limit = Math.min(100, Number(url.searchParams.get("limit") || "20"));
+    const skip = (page - 1) * limit;
 
-    const { searchParams } = new URL(req.url);
-    const search = searchParams.get("search");
+    await connectToDatabase();
 
     // MongoDB query filter
     const filter: Record<string, unknown> = { stock: { $gt: 0 } };
 
-    if (search) {
-      filter.name = { $regex: search, $options: "i" }; // case-insensitive
+    if (q) {
+      filter.name = { $regex: q, $options: "i" }; // case-insensitive
     }
 
-    let products: ProductDocument[];
+    const [total, docs] = await Promise.all([
+      Product.countDocuments(filter),
+      Product.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }),
+    ]);
 
-    if (search) {
-      // filtered search
-      products = await Product.find(filter).sort({ createdAt: -1 });
-    } else {
-      // shuffle all
-      products = (await Product.aggregate([
-        { $match: filter },
-        { $sample: { size: 100000 } },
-      ])) as ProductDocument[];
-    }
+    // convert ObjectIds and ensure minimal fields
+    const products = docs.map((d) => ({
+      _id: String(d._id),
+      name: d.name,
+      description: d.description,
+      price: d.price,
+      stock: d.stock,
+      imageUrl: d.imageUrl,
+      sellerId: d.sellerId,
+    }));
 
-    return NextResponse.json({ products });
+    return NextResponse.json({ products, total, page, limit });
   } catch (error) {
     console.error("❌ Error fetching products:", error);
     return NextResponse.json(

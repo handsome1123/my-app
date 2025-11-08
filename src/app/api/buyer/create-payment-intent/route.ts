@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Product } from "@/models/Product";
 import { Order } from "@/models/Order";
 import { User } from "@/models/User";
@@ -34,7 +34,7 @@ interface RequestBody {
 export async function POST(req: NextRequest) {
   try {
     // Connect to MongoDB
-    await connectDB();
+    await connectToDatabase();
 
     // Token verification
     const authHeader = req.headers.get("Authorization");

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Product } from "@/models/Product";
 import { verifyToken } from "@/lib/jwt";
 import cloudinary from "@/lib/cloudinary";
@@ -20,7 +20,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // ✅ Await params in Next.js 15
     const { id } = await context.params;
@@ -49,7 +49,7 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // ✅ Await params in Next.js 15
     const { id } = await context.params;
@@ -155,7 +155,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // ✅ Await params in Next.js 15
     const { id } = await context.params;

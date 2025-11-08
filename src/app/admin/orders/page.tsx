@@ -14,10 +14,8 @@ import {
   MapPin,
   Phone,
   Mail,
-  User,
-  CreditCard,
   ShoppingBag,
-  Filter,
+  RefreshCcw,
   Search,
   X,
   Trash2
@@ -361,220 +359,281 @@ export default function AdminOrdersPage() {
     }
   };
 
+  // small helper to format currency
+  const fmt = (v?: number) => (v !== undefined ? `฿${v.toFixed(2)}` : "฿0.00");
 
-  if (loading) return <p className="text-center mt-10">Loading orders...</p>;
-  if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-6">
+        <div className="max-w-5xl w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="animate-pulse bg-white rounded-2xl p-5 shadow-sm">
+              <div className="h-36 bg-gray-200 rounded-md mb-4" />
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+              <div className="h-3 bg-gray-200 rounded w-1/2 mb-4" />
+              <div className="flex gap-2">
+                <div className="h-8 w-24 bg-gray-200 rounded" />
+                <div className="h-8 w-12 bg-gray-200 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-6">
+        <div className="max-w-xl w-full bg-white rounded-2xl p-8 shadow">
+          <h3 className="text-lg font-semibold text-red-600 mb-2">Error</h3>
+          <p className="text-sm text-gray-600 mb-6">{error}</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => router.replace("/")}
+              className="px-4 py-2 bg-gray-50 border rounded-lg"
+            >
+              Go Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto p-4 md:p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <ShoppingBag className="h-6 w-6 text-blue-600" />
+      {/* Header + quick stats */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <ShoppingBag className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Orders</h1>
+                  <p className="text-sm text-gray-500 mt-1">Review incoming orders and manage payment confirmations</p>
+                </div>
+              </div>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">My Orders</h1>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex gap-3">
+                <div className="text-sm text-gray-600">
+                  <div className="text-xs text-gray-400">Total</div>
+                  <div className="font-semibold text-gray-900">{orders.length}</div>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <div className="text-xs text-gray-400">Pending</div>
+                  <div className="font-semibold text-amber-600">{orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length}</div>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <div className="text-xs text-gray-400">Shipped</div>
+                  <div className="font-semibold text-purple-600">{orders.filter(o => o.status === 'shipped').length}</div>
+                </div>
+              </div>
+
+              <button
+                title="Refresh"
+                onClick={() => { setLoading(true); setTimeout(() => window.location.reload(), 200); }}
+                className="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+              >
+                <RefreshCcw className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          {/* Controls */}
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search orders by product name..."
+                placeholder="Search by product name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="pl-10 pr-8 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none bg-white min-w-[150px]"
-              >
-                <option value="all">All Status</option>
-                <option value="pending_payment">Pending Payment</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="shipped">Shipped</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="rejected">Rejected</option>
-              </select>
+
+            <div className="flex gap-2 flex-wrap">
+              {/*
+                {key: 'all', label: 'All'},
+                {key: 'pending_payment', label: 'Waiting Payment'},
+                {key: 'pending', label: 'Pending'},
+                {key: 'confirmed', label: 'Confirmed'},
+                {key: 'shipped', label: 'Shipped'},
+                {key: 'delivered', label: 'Delivered'},
+                {key: 'cancelled', label: 'Cancelled'}
+              */}
+              {Object.entries({
+                all: "All",
+                pending_payment: "Waiting Payment",
+                pending: "Pending",
+                confirmed: "Confirmed",
+                shipped: "Shipped",
+                delivered: "Delivered",
+                cancelled: "Cancelled"
+              }).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setStatusFilter(key as keyof Order)}
+                  className={`text-sm px-3 py-2 rounded-full transition ${
+                    statusFilter === key ? 'bg-blue-600 text-white shadow' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Orders List */}
-      <div className="max-w-7xl mx-auto p-4 md:p-6">
+      {/* Orders list */}
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
         {filteredOrders.length === 0 ? (
           <div className="text-center py-12">
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 max-w-md mx-auto">
               <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders found</h3>
               <p className="text-gray-500">
-                {searchTerm || statusFilter !== "all" 
-                  ? "Try adjusting your search or filter criteria." 
-                  : "You haven't placed any orders yet. Start shopping to see your orders here!"
-                }
+                {searchTerm || statusFilter !== "all"
+                  ? "Try adjusting filters or search terms."
+                  : "No orders yet — customer orders will appear here."}
               </p>
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            {filteredOrders.map((order) => {
-              const statusConfig = getStatusConfig(order.status);
-              const StatusIcon = statusConfig.icon;
-
+          <div className="grid gap-4">
+            {filteredOrders.map(order => {
+              const statusCfg = getStatusConfig(order.status);
+              const StatusIcon = statusCfg.icon;
               return (
-                <div
+                <article
                   key={order._id}
-                  className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300"
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col lg:flex-row gap-4 items-start hover:shadow-md transition"
                 >
-                  <div className="p-6">
-                    <div className="flex flex-col lg:flex-row gap-6">
-                      {/* Product Image */}
-                      <div className="flex-shrink-0">
-                        <div className="w-full lg:w-32 h-32 relative rounded-xl overflow-hidden bg-gray-100">
-                          <Image
-                            src={order.productId?.imageUrl || "/api/placeholder/200/200"}
-                            alt={order.productId?.name || "Unknown product"}
-                            className="w-full h-full object-cover"
-                            width={100}
-                            height={100}
-                          />
-                        </div>
+                  {/* thumbnail */}
+                  <div className="flex-shrink-0">
+                    <div className="w-full lg:w-36 h-36 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                      <Image
+                        src={order.productId?.imageUrl || "/api/placeholder/200/200"}
+                        alt={order.productId?.name || "Product"}
+                        width={140}
+                        height={140}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                  </div>
+
+                  {/* main info */}
+                  <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+                    <div className="lg:col-span-2">
+                      <h3 className="text-lg font-semibold text-gray-900">{order.productId?.name}</h3>
+                      <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-4 items-center">
+                        <span className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-gray-400" /> Qty: <strong className="text-gray-900 ml-1">{order.quantity}</strong>
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-400" /> {new Date(order.createdAt).toLocaleDateString()}
+                        </span>
+                        <span className="font-semibold text-gray-900">{fmt(order.totalPrice)}</span>
                       </div>
 
-                      {/* Main Content */}
-                      <div className="flex-1 space-y-4">
-                        {/* Product Info & Status */}
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* shipping brief */}
+                        <div className="text-sm text-gray-600 flex items-start gap-2">
+                          <MapPin className="w-4 h-4 text-gray-400 mt-1" />
                           <div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                              {order.productId?.name || "Unknown product"}
-                            </h2>
-
-                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                              <span className="flex items-center gap-1">
-                                <Package className="h-4 w-4" />
-                                Qty: {order.quantity}
-                              </span>
-                              <span className="font-semibold text-gray-900">
-                                ฿{(order.totalPrice ?? 0).toFixed(2)}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                {new Date(order.createdAt).toLocaleDateString()}
-                              </span>
+                            <div className="font-medium text-gray-800">
+                              {order.shippingAddress?.firstName} {order.shippingAddress?.lastName}
                             </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-4">
-                            <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border font-medium text-sm ${statusConfig.color}`}>
-                              <StatusIcon className="h-4 w-4" />
-                              {order.status.replace("_", " ").toUpperCase()}
+                            <div className="text-sm text-gray-500">
+                              {order.shippingAddress?.city}, {order.shippingAddress?.state}
                             </div>
-                            <button
-                              onClick={() => handleDeleteOrder(order._id)}
-                              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Delete Order"
-                              disabled={isDeleting === order._id}
-                            >
-                              <Trash2 size={20} />
-                            </button>
                           </div>
                         </div>
 
-                        {/* Details Grid */}
-                        <div className="grid md:grid-cols-2 gap-6">
-                          {/* Shipping Information */}
-                          <div className="bg-gray-50 rounded-xl p-4">
-                            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-gray-600" />
-                              Shipping Details
-                            </h3>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex items-center gap-2">
-                                <User className="h-3 w-3 text-gray-500" />
-                                <span>
-                                  {order.shippingAddress?.firstName ?? "Unknown"} {order.shippingAddress?.lastName ?? ""}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-3 w-3 text-gray-500" />
-                                <span>{order.shippingAddress?.email ?? "No email provided"}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-3 w-3 text-gray-500" />
-                                <span>{order.shippingAddress?.phone ?? "No phone number"}</span>
-                              </div>
-                              <div className="flex items-start gap-2">
-                                <MapPin className="h-3 w-3 text-gray-500 mt-0.5" />
-                                <span className="leading-relaxed">
-                                  {order.shippingAddress?.address}<br />
-                                  {order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}
-                                  {order.shippingAddress?.country && <><br />{order.shippingAddress.country}</>}
-                                </span>
-                              </div>
-                            </div>
+                        {/* contact */}
+                        <div className="text-sm text-gray-600 flex items-start gap-3">
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-4 h-4 text-gray-400" />
+                            <span>{order.shippingAddress?.phone || '—'}</span>
                           </div>
-
-                          {/* Payment Information */}
-                          <div className="bg-gray-50 rounded-xl p-4">
-                            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                              <CreditCard className="h-4 w-4 text-gray-600" />
-                              Payment Details
-                            </h3>
-                            {order.paymentSlipUrl ? (
-                              <div className="space-y-3">
-                                <p className="text-sm text-green-700 font-medium">Payment slip uploaded</p>
-                                <div
-                                  className="w-24 h-24 relative rounded-lg overflow-hidden bg-white border cursor-pointer"
-                                  onClick={() => {
-                                    setModalImage(order.paymentSlipUrl!);
-                                    setSelectedOrderId(order._id);
-                                  }}
-                                >
-                                  <Image
-                                    src={order.paymentSlipUrl}
-                                    alt="Payment Slip"
-                                    className="w-full h-full object-cover"
-                                    width={100}
-                                    height={100}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2 text-sm text-amber-700">
-                                <Clock className="h-4 w-4" />
-                                <span>Awaiting payment confirmation</span>
-                              </div>
-                            )}
+                          <div className="flex items-center gap-2 ml-4">
+                            <Mail className="w-4 h-4 text-gray-400" />
+                            <span>{order.shippingAddress?.email || '—'}</span>
                           </div>
                         </div>
                       </div>
                     </div>
+
+                    {/* right column: status & actions */}
+                    <div className="flex flex-col items-start lg:items-end gap-3">
+                      <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border text-sm font-medium ${statusCfg.color}`}>
+                        <StatusIcon className="w-4 h-4" />
+                        <span className="uppercase tracking-wider text-xs">{order.status.replace("_", " ")}</span>
+                      </div>
+
+                      {/* payment slip preview or hint */}
+                      <div className="flex items-center gap-2">
+                        {order.paymentSlipUrl ? (
+                          <button
+                            onClick={() => { setModalImage(order.paymentSlipUrl!); setSelectedOrderId(order._id); }}
+                            className="text-sm px-3 py-2 bg-white border rounded-md hover:shadow transition"
+                          >
+                            View Slip
+                          </button>
+                        ) : (
+                          <div className="text-sm px-3 py-2 bg-yellow-50 text-amber-700 rounded-md">No slip</div>
+                        )}
+                      </div>
+
+                      {/* actions */}
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => handleDeleteOrder(order._id)}
+                          className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition"
+                          title="Delete order"
+                          disabled={isDeleting === order._id}
+                        >
+                          <Trash2 className="w-4 h-4" /> Delete
+                        </button>
+
+                        {order.paymentSlipUrl && order.status === "pending_payment" && (
+                          <>
+                            <button
+                              onClick={() => { setModalImage(order.paymentSlipUrl!); setSelectedOrderId(order._id); }}
+                              className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition"
+                            >
+                              Review Payment
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
         )}
       </div>
 
+      {/* Modals (unchanged behavior) */}
       {modalImage && selectedOrderId && (
         <ImageModal
           src={modalImage}
-          onClose={() => {
-            setModalImage(null);
-            setSelectedOrderId(null);
-          }}
+          onClose={() => { setModalImage(null); setSelectedOrderId(null); }}
           onConfirm={handleConfirmPayment}
           onReject={handleRejectPayment}
         />

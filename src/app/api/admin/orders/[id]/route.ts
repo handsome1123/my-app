@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Order } from "@/models/Order";
 import { User } from "@/models/User";
 import { verifyToken } from "@/lib/jwt";
@@ -15,7 +15,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
   ) {
     try {
-      await connectDB();
+      await connectToDatabase();
 
       // 🔑 Get token from Authorization header
       const authHeader = req.headers.get("authorization");

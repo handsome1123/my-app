@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
 
 interface EmailTokenPayload {
@@ -13,7 +13,7 @@ interface EmailTokenPayload {
 }
 
 export async function GET(request: Request) {
-  await connectDB();
+  await connectToDatabase();
 
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("token");

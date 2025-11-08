@@ -13,6 +13,8 @@ const UserSchema = new Schema(
     isVerified: { type: Boolean, default: false },
     verificationToken: { type: String },
     verificationTokenExpires: { type: Date },
+    notificationsCount: { type: Number, default: 0 },
+    unreadNotifications: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

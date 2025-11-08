@@ -3,11 +3,11 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendVerificationEmail } from "@/lib/mailer";
 import { User } from "@/models/User";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 
 export async function POST(request: Request) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     const { email, password, name, role } = await request.json();
 

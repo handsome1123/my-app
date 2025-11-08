@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Order } from "@/models/Order";
 import { verifyToken } from "@/lib/jwt";
 
@@ -10,7 +10,7 @@ interface DecodedToken {
 
 export async function GET(req: NextRequest) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // Get buyer from token
     const authHeader = req.headers.get("Authorization");

@@ -1,7 +1,7 @@
 // app/api/seller/orders/ship/[id]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Order } from "@/models/Order";
 import { verifyToken } from "@/lib/jwt";
 
@@ -15,7 +15,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // 🔑 Verify seller token
     const authHeader = req.headers.get("Authorization");

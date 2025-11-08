@@ -4,9 +4,13 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 export interface User {
+  id: string;
   name: string;
   email: string;
+  avatar?: string;
   role: "buyer" | "seller" | "admin";
+  unreadNotifications?: number;
+  notificationsCount?: number;
 }
 
 interface UserContextType {

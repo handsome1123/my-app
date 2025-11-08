@@ -1,6 +1,6 @@
 // /app/api/admin/orders/confirm/[id]/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Order } from "@/models/Order";
 
 interface Params {
@@ -9,7 +9,7 @@ interface Params {
 
 export async function POST(req: Request, context: Params) {
   try {
-    await connectDB();
+    await connectToDatabase();
     
     // Await the params since it's now a Promise
     const { id: orderId } = await context.params;

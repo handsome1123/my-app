@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import bcrypt from "bcryptjs";
 import { signToken } from "@/lib/jwt";
@@ -7,7 +7,7 @@ import { signToken } from "@/lib/jwt";
 
 export async function POST(req: Request) {
   try {
-    await connectDB();
+    await connectToDatabase();
     const { email, password } = await req.json();
 
     // Find user by email

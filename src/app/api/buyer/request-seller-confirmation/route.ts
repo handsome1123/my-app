@@ -1,6 +1,6 @@
 // /api/buyer/request-seller-confirmation/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Order } from "@/models/Order";
 import { Product } from "@/models/Product";
 import { User } from "@/models/User";
@@ -34,7 +34,7 @@ interface Product {
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // Verify buyer token
     const authHeader = req.headers.get("Authorization");

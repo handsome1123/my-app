@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Product } from "@/models/Product";
 import { Order } from "@/models/Order";
 import { User } from "@/models/User";
@@ -30,7 +30,7 @@ interface CustomerInfo {
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     const form = await req.formData();
     const productId = form.get("productId") as string;

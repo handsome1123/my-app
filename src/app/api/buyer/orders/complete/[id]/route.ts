@@ -1,6 +1,6 @@
 // /api/buyer/orders/complete/[id].ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { Order } from "@/models/Order";
 
 interface Params {
@@ -9,7 +9,7 @@ interface Params {
 
 export async function PATCH(req: Request, context: Params) {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     const { id:orderId } = await context.params;
 

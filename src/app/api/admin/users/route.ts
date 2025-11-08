@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User"; 
 
 export async function GET() {
   try {
-    await connectDB();
+    await connectToDatabase();
 
     // Fetch all users
     const users = await User.find().sort({ createdAt: -1 });
@@ -21,5 +21,3 @@ export async function GET() {
     );
   }
 }
-
-
