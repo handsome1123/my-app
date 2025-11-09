@@ -268,7 +268,7 @@ test.describe("Checkout + Stripe webhook flow", () => {
 
   test("should handle refund webhook", async ({ request }) => {
     // Setup: Create and pay for an order first
-    const { orderId } = await createAndPayOrder(db, request);
+    const { orderId, token } = await createAndPayOrder(db, request);
     testIds.orderId = orderId;
 
     // Simulate refund.created webhook
@@ -339,7 +339,7 @@ async function setupTestData(db: Db, opts = { stock: 10 }) {
 }
 
 async function createAndPayOrder(db: Db, request: APIRequestContext) {
-  const { token, productId } = await setupTestData(db);
+  const { token } = await setupTestData(db);
 
   const orderRes = await request.post("/api/buyer/create-order", {
     headers: { Authorization: `Bearer ${token}` },
