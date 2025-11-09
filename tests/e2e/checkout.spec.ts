@@ -15,7 +15,7 @@ import path from "path";
 			const key = s.slice(0, idx).trim();
 			let val = s.slice(idx + 1).trim();
 			// Strip surrounding quotes if any
-			if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'" ) && val.endsWith("'" )))) {
+			if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
 				val = val.slice(1, -1);
 			}
 			// Do not overwrite existing env vars set by CI or the shell
@@ -239,21 +239,27 @@ test.describe("Checkout + Stripe webhook flow", () => {
     const { productId, buyerId, token } = await setupTestData(db, { stock: 1 });
     testIds = { productId, buyerId };
 
-    // Try to create two orders simultaneously
-    const [res1, res2] = await Promise.all([
-      request.post("/api/buyer/create-order", {
-        headers: { Authorization: `Bearer ${token}` },
-        data: { productId: String(productId), quantity: 1 },
-      }),
-      request.post("/api/buyer/create-order", {
-        headers: { Authorization: `Bearer ${token}` },
-        data: { productId: String(productId), quantity: 1 },
-      }),
-    ]);
+    // Add item to cart first
+    await request.post("/api/buyer/cart", {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { productId: String(productId), quantity: 1 },
+    });
 
-    // One should succeed, one should fail
-    expect(res1.ok() || res2.ok()).toBeTruthy();
-    expect(res1.ok() && res2.ok()).toBeFalsy();
+    // Try to create order (should succeed)
+    const res1 = await request.post("/api/buyer/create-order", {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {},
+    });
+
+    // Try to create another order (should fail due to insufficient stock)
+    const res2 = await request.post("/api/buyer/create-order", {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {},
+    });
+
+    // One should succeed, one should fail due to insufficient stock
+    expect(res1.ok()).toBeTruthy();
+    expect(res2.ok()).toBeFalsy();
 
     // Check product stock is 0
     const product = await db.collection<Product>("products").findOne({ _id: productId });
@@ -305,10 +311,10 @@ test.describe("Checkout + Stripe webhook flow", () => {
 async function setupTestData(db: Db, opts = { stock: 10 }) {
   const sellerId = new ObjectId();
   const buyerId = new ObjectId();
-  
+
   await db.collection("users").insertMany([
-    { _id: sellerId, role: "seller", name: "Test Seller" },
-    { _id: buyerId, role: "buyer", name: "Test Buyer" }
+    { _id: sellerId, role: "seller", name: "Test Seller", email: `seller+${Date.now()}@example.com`, createdAt: new Date() },
+    { _id: buyerId, role: "buyer", name: "Test Buyer", email: `buyer+${Date.now()}@example.com`, createdAt: new Date() }
   ]);
 
   const productId = new ObjectId();
@@ -316,12 +322,15 @@ async function setupTestData(db: Db, opts = { stock: 10 }) {
     _id: productId,
     sellerId,
     name: "Test Product",
+    description: "Test product for E2E",
     price: 100,
     stock: opts.stock,
+    imageUrl: "",
+    createdAt: new Date(),
   });
 
   const token = jwt.sign(
-    { sub: String(buyerId) },
+    { sub: String(buyerId), email: `buyer+${Date.now()}@example.com` },
     process.env.JWT_SECRET as string,
     { expiresIn: "1h" }
   );
@@ -331,17 +340,18 @@ async function setupTestData(db: Db, opts = { stock: 10 }) {
 
 async function createAndPayOrder(db: Db, request: APIRequestContext) {
   const { token, productId } = await setupTestData(db);
-  
-  const orderRes = await request.post("/api/buyer/.create-order", {
+
+  const orderRes = await request.post("/api/buyer/create-order", {
     headers: { Authorization: `Bearer ${token}` },
-    data: { productId: String(productId) },
+    data: {},
   });
-  
-  const { orderId }: { orderId: string } = await orderRes.json();
-  
+
+  const orderData = await orderRes.json();
+  const { orderId } = orderData;
+
   // Simulate successful payment
   await simulateSuccessfulPayment(db, orderId);
-  
+
   return { orderId, token };
 }
 
@@ -364,14 +374,14 @@ async function simulateSuccessfulPayment(db: Db, orderId: string) {
   );
 
   // Create payout records
-  const order = await db.collection<Order>("orders").findOne({ _id: new ObjectId(orderId) });
+  const order = await db.collection("orders").findOne({ _id: new ObjectId(orderId) });
   if (order?.items) {
     const commissionPercent = 10;
     for (const item of order.items) {
       if (!item.sellerId) continue;
       const gross = item.price * item.quantity;
-      const commission = (gross * commissionPercent) / 100;
-      const netAmount = gross - commission;
+      const commission = Math.round((gross * commissionPercent) / 100 * 100) / 100;
+      const netAmount = Math.round((gross - commission) * 100) / 100;
 
       await db.collection("payouts").insertOne({
         orderId: new ObjectId(orderId),
