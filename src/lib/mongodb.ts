@@ -23,6 +23,7 @@ function sanitizeMongoUri(uri: string): string {
 
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
 if (!MONGODB_URI) {
+  console.error('MongoDB URI not found in environment variables');
   throw new Error('MongoDB URI not found in environment variables');
 }
 
