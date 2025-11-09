@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/mongodb";
+import { connectToMongoDB } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import { verifyToken } from "@/lib/jwt";
 
@@ -10,7 +10,7 @@ interface DecodedToken {
 
 export async function GET(req: Request) {
   try {
-    await connectToDatabase();
+    await connectToMongoDB();
 
     const token = req.headers.get("Authorization")?.split(" ")[1];
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    await connectToDatabase();
+    await connectToMongoDB();
 
     const token = req.headers.get("Authorization")?.split(" ")[1];
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

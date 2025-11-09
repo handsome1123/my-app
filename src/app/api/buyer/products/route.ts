@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/mongodb";
+import { connectToMongoDB } from "@/lib/mongodb";
 import { Product } from "@/models/Product";
 
 export async function GET(req: Request) {
@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     const limit = Math.min(100, Number(url.searchParams.get("limit") || "20"));
     const skip = (page - 1) * limit;
 
-    await connectToDatabase();
+    await connectToMongoDB();
 
     // MongoDB query filter
     const filter: Record<string, unknown> = { stock: { $gt: 0 } };

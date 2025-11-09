@@ -1,7 +1,9 @@
 import { MongoClient, Db } from 'mongodb';
+import mongoose from 'mongoose';
 
 interface GlobalWithMongo extends Global {
   _mongoClientPromise?: Promise<MongoClient>;
+  _mongooseConnectionPromise?: Promise<typeof mongoose>;
 }
 
 declare const global: GlobalWithMongo;
@@ -51,6 +53,7 @@ const uri = sanitizeMongoUri(MONGODB_URI);
 const dbName = process.env.MONGODB_DB || 'secondhandmfu';
 
 let clientPromise: Promise<MongoClient>;
+let mongooseConnectionPromise: Promise<typeof mongoose>;
 
 async function createMongoClient(): Promise<MongoClient> {
   const config = defaultMongoConfig;
@@ -86,13 +89,56 @@ async function createMongoClient(): Promise<MongoClient> {
   throw new Error('Unexpected error in MongoDB connection');
 }
 
+async function createMongooseConnection(): Promise<typeof mongoose> {
+  const config = defaultMongoConfig;
+
+  mongoose.set('bufferCommands', false);
+  mongoose.set('maxTimeMS', 10000);
+
+  let attempts = 0;
+  const maxAttempts = 3;
+  const retryDelay = 1000;
+
+  while (attempts < maxAttempts) {
+    try {
+      await mongoose.connect(uri, {
+        maxPoolSize: config.maxPoolSize,
+        serverSelectionTimeoutMS: config.serverSelectionTimeoutMS,
+        connectTimeoutMS: config.connectTimeoutMS,
+        socketTimeoutMS: config.socketTimeoutMS,
+        maxIdleTimeMS: config.maxIdleTimeMS,
+        retryWrites: config.retryWrites,
+        retryReads: config.retryReads,
+        dbName: dbName,
+      });
+
+      console.log('Successfully connected to MongoDB via Mongoose');
+      return mongoose;
+    } catch (error) {
+      attempts++;
+      console.error(`Mongoose connection attempt ${attempts} failed:`, error);
+      if (attempts >= maxAttempts) {
+        throw new Error(`Failed to connect to MongoDB via Mongoose after ${maxAttempts} attempts: ${error}`);
+      }
+      await new Promise(resolve => setTimeout(resolve, retryDelay * attempts));
+    }
+  }
+
+  throw new Error('Unexpected error in Mongoose connection');
+}
+
 if (process.env.NODE_ENV === 'development') {
   if (!global._mongoClientPromise) {
     global._mongoClientPromise = createMongoClient();
   }
+  if (!global._mongooseConnectionPromise) {
+    global._mongooseConnectionPromise = createMongooseConnection();
+  }
   clientPromise = global._mongoClientPromise;
+  mongooseConnectionPromise = global._mongooseConnectionPromise;
 } else {
   clientPromise = createMongoClient();
+  mongooseConnectionPromise = createMongooseConnection();
 }
 
 export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
@@ -126,6 +172,32 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
   }
 }
 
+export async function connectToMongoDB(): Promise<typeof mongoose> {
+  try {
+    await mongooseConnectionPromise;
+    return mongoose;
+  } catch (err) {
+    console.error('Mongoose connection error:', err);
+
+    // Enhanced error handling with specific error types
+    if (err instanceof Error) {
+      if (err.message.includes('authentication failed')) {
+        throw new AuthenticationError('MongoDB authentication failed. Please check your credentials.', err);
+      } else if (err.message.includes('connection timed out') || err.message.includes('timeout')) {
+        throw new TimeoutError('MongoDB connection timed out. Please check your network connection.', err);
+      } else if (err.message.includes('ECONNREFUSED') || err.message.includes('getaddrinfo ENOTFOUND')) {
+        throw new ConnectionError('Failed to connect to MongoDB. Please check your connection string and network.', err);
+      }
+    }
+
+    throw new MongoDBError(
+      'Failed to connect to MongoDB via Mongoose. Please check your connection string and network.',
+      'CONNECTION_ERROR',
+      err instanceof Error ? err : undefined
+    );
+  }
+}
+
 export async function healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; message: string }> {
   try {
     const { db } = await connectToDatabase();
@@ -150,11 +222,17 @@ export async function disconnectFromDatabase(): Promise<void> {
   try {
     const client = await clientPromise;
     await client.close();
+    await mongoose.disconnect();
     console.log('Successfully disconnected from MongoDB');
 
-    // Clear global promise in development
-    if (process.env.NODE_ENV === 'development' && global._mongoClientPromise) {
-      delete global._mongoClientPromise;
+    // Clear global promises in development
+    if (process.env.NODE_ENV === 'development') {
+      if (global._mongoClientPromise) {
+        delete global._mongoClientPromise;
+      }
+      if (global._mongooseConnectionPromise) {
+        delete global._mongooseConnectionPromise;
+      }
     }
   } catch (error) {
     console.error('Error disconnecting from MongoDB:', error);

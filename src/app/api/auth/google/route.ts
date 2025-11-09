@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { OAuth2Client } from "google-auth-library";
-import { connectToDatabase } from "@/lib/mongodb";
+import { connectToMongoDB } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import { signToken } from "@/lib/jwt";
 
@@ -8,7 +8,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export async function POST(req: Request) {
   try {
-    await connectToDatabase();
+    await connectToMongoDB();
     const { idToken } = await req.json();
 
     // Verify Google token
