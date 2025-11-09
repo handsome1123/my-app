@@ -15,7 +15,7 @@ import path from "path";
 			const key = s.slice(0, idx).trim();
 			let val = s.slice(idx + 1).trim();
 			// Strip surrounding quotes if any
-			if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+			if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'" ) && val.endsWith("'" )))) {
 				val = val.slice(1, -1);
 			}
 			// Do not overwrite existing env vars set by CI or the shell
@@ -24,18 +24,36 @@ import path from "path";
 	}
 })();
 
-import { test, expect } from "@playwright/test";
+import { test, expect, APIRequestContext } from "@playwright/test";
 import { connectToDatabase } from "@/lib/mongodb";
 import jwt from "jsonwebtoken";
 import Stripe from "stripe";
-import { ObjectId } from "mongodb";
+import { ObjectId, Db } from "mongodb";
+
+interface Order {
+    _id: ObjectId;
+    status: string;
+    paidAt?: Date;
+    stripePaymentIntentId?: string;
+    items?: {
+        sellerId: ObjectId;
+        price: number;
+        quantity: number;
+    }[];
+}
+
+interface Product {
+    _id: ObjectId;
+    stock: number;
+}
 
 // Test data cleanup helper
-async function cleanupTestData(db: any, ids: { buyerId?: ObjectId; sellerId?: ObjectId; productId?: ObjectId; orderId?: ObjectId }) {
+async function cleanupTestData(db: Db, ids: { buyerId?: ObjectId; sellerId?: ObjectId; productId?: ObjectId; orderId?: string }) {
   try {
     if (ids.orderId) {
-      await db.collection("orders").deleteOne({ _id: ids.orderId });
-      await db.collection("payouts").deleteMany({ orderId: ids.orderId });
+      const oid = new ObjectId(ids.orderId);
+      await db.collection("orders").deleteOne({ _id: oid });
+      await db.collection("payouts").deleteMany({ orderId: oid });
     }
     if (ids.buyerId) {
       await db.collection("users").deleteOne({ _id: ids.buyerId });
@@ -50,7 +68,7 @@ async function cleanupTestData(db: any, ids: { buyerId?: ObjectId; sellerId?: Ob
 
 test.describe("Checkout + Stripe webhook flow", () => {
   let testIds: { buyerId?: ObjectId; sellerId?: ObjectId; productId?: ObjectId; orderId?: string } = {};
-  let db: any;
+  let db: Db;
   let stripe: Stripe;
 
   test.beforeAll(async () => {
@@ -167,15 +185,15 @@ test.describe("Checkout + Stripe webhook flow", () => {
     expect(webhookJson.received).toBeTruthy();
 
     // Verify in DB: order status changed to paid
-    const orderDoc = await db.collection("orders").findOne({ _id: new ObjectId(orderId) });
+    const orderDoc = await db.collection<Order>("orders").findOne({ _id: new ObjectId(orderId) });
     expect(orderDoc).toBeTruthy();
-    expect(orderDoc.status).toBe("paid");
+    expect(orderDoc!.status).toBe("paid");
 
     // Additional assertions for order state
-    const orderAfterPaid = await db.collection("orders").findOne({ _id: new ObjectId(orderId) });
-    expect(orderAfterPaid.status).toBe("paid");
-    expect(orderAfterPaid.paidAt).toBeTruthy();
-    expect(orderAfterPaid.stripePaymentIntentId).toBeTruthy();
+    const orderAfterPaid = await db.collection<Order>("orders").findOne({ _id: new ObjectId(orderId) });
+    expect(orderAfterPaid!.status).toBe("paid");
+    expect(orderAfterPaid!.paidAt).toBeTruthy();
+    expect(orderAfterPaid!.stripePaymentIntentId).toBeTruthy();
 
     // Verify payout details
     const payouts = await db.collection("payouts").find({ orderId: new ObjectId(orderId) }).toArray();
@@ -212,8 +230,8 @@ test.describe("Checkout + Stripe webhook flow", () => {
     expect(failedRes.ok()).toBeTruthy();
 
     // Verify order status updated for failed payment
-    const orderAfterFailed = await db.collection("orders").findOne({ _id: new ObjectId(orderId) });
-    expect(orderAfterFailed.status).toBe("payment_failed");
+    const orderAfterFailed = await db.collection<Order>("orders").findOne({ _id: new ObjectId(orderId) });
+    expect(orderAfterFailed!.status).toBe("payment_failed");
   });
 
   test("should handle concurrent order attempts for same product", async ({ request }) => {
@@ -238,13 +256,13 @@ test.describe("Checkout + Stripe webhook flow", () => {
     expect(res1.ok() && res2.ok()).toBeFalsy();
 
     // Check product stock is 0
-    const product = await db.collection("products").findOne({ _id: productId });
-    expect(product.stock).toBe(0);
+    const product = await db.collection<Product>("products").findOne({ _id: productId });
+    expect(product!.stock).toBe(0);
   });
 
   test("should handle refund webhook", async ({ request }) => {
     // Setup: Create and pay for an order first
-    const { orderId, token } = await createAndPayOrder(db, request);
+    const { orderId } = await createAndPayOrder(db, request);
     testIds.orderId = orderId;
 
     // Simulate refund.created webhook
@@ -273,8 +291,8 @@ test.describe("Checkout + Stripe webhook flow", () => {
     expect(webhookRes.ok()).toBeTruthy();
 
     // Verify order and payout states after refund
-    const order = await db.collection("orders").findOne({ _id: new ObjectId(orderId) });
-    expect(order.status).toBe("refunded");
+    const order = await db.collection<Order>("orders").findOne({ _id: new ObjectId(orderId) });
+    expect(order!.status).toBe("refunded");
 
     const payouts = await db.collection("payouts").find({ orderId: new ObjectId(orderId) }).toArray();
     for (const payout of payouts) {
@@ -284,7 +302,7 @@ test.describe("Checkout + Stripe webhook flow", () => {
 });
 
 // Helper functions
-async function setupTestData(db: any, opts = { stock: 10 }) {
+async function setupTestData(db: Db, opts = { stock: 10 }) {
   const sellerId = new ObjectId();
   const buyerId = new ObjectId();
   
@@ -311,15 +329,15 @@ async function setupTestData(db: any, opts = { stock: 10 }) {
   return { sellerId, buyerId, productId, token };
 }
 
-async function createAndPayOrder(db: any, request: any) {
+async function createAndPayOrder(db: Db, request: APIRequestContext) {
   const { token, productId } = await setupTestData(db);
   
-  const orderRes = await request.post("/api/buyer/create-order", {
+  const orderRes = await request.post("/api/buyer/.create-order", {
     headers: { Authorization: `Bearer ${token}` },
     data: { productId: String(productId) },
   });
   
-  const { orderId } = await orderRes.json();
+  const { orderId }: { orderId: string } = await orderRes.json();
   
   // Simulate successful payment
   await simulateSuccessfulPayment(db, orderId);
@@ -327,7 +345,7 @@ async function createAndPayOrder(db: any, request: any) {
   return { orderId, token };
 }
 
-async function simulateSuccessfulPayment(db: any, orderId: string) {
+async function simulateSuccessfulPayment(db: Db, orderId: string) {
   const paymentIntent = {
     id: `pi_test_${Date.now()}`,
     metadata: { orderId },
@@ -346,7 +364,7 @@ async function simulateSuccessfulPayment(db: any, orderId: string) {
   );
 
   // Create payout records
-  const order = await db.collection("orders").findOne({ _id: new ObjectId(orderId) });
+  const order = await db.collection<Order>("orders").findOne({ _id: new ObjectId(orderId) });
   if (order?.items) {
     const commissionPercent = 10;
     for (const item of order.items) {
