@@ -128,11 +128,10 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
 
 export async function healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; message: string }> {
   try {
-    const { client, db } = await connectToDatabase();
+    const { db } = await connectToDatabase();
 
     // Test database operations
     const collections = await db.collections();
-    const stats = await db.stats();
 
     return {
       status: 'healthy',
@@ -181,7 +180,7 @@ export async function getConnectionStatus(): Promise<{
       host: client.options.hosts?.[0]?.host || null,
       isPrimary: true // Simplified for this implementation
     };
-  } catch (error) {
+  } catch {
     return {
       connected: false,
       readyState: 0, // Disconnected
@@ -238,7 +237,7 @@ export async function initializeDatabase(): Promise<void> {
       // Check if collection exists, if not it will be created when first document is inserted
       try {
         await collection.stats();
-      } catch (error) {
+      } catch {
         console.log(`Collection ${collectionName} will be created on first insert`);
       }
     }
