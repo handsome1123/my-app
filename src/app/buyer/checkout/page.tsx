@@ -54,6 +54,21 @@ interface CheckoutForm {
   country: string;
 }
 
+interface ShippingAddress {
+  _id?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  isDefault?: boolean;
+  label?: string;
+}
+
 interface OrderConfirmation {
   orderId: string;
   status: "pending_payment" | "paid" | "confirmed" | "rejected";
@@ -370,6 +385,10 @@ function CheckoutContent() {
     country: "Thailand"
   });
 
+  const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [newAddressLabel, setNewAddressLabel] = useState("Home");
+
   // Check if the form is valid. This memo will only re-run when formData changes.
   const isFormValid = useMemo(() => {
     return requiredFields.every((f) => {
@@ -385,22 +404,101 @@ function CheckoutContent() {
     }
   }, []);
 
+  // Load saved addresses for returning customers
   useEffect(() => {
-    async function fetchProduct() {
-      if (!productId) return;
+    const fetchSavedAddresses = async () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) return;
+
       try {
-        const res = await fetch(`/api/buyer/products/${productId}`);
+        const res = await fetch("/api/buyer/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const data = await res.json();
-        if (res.ok) setProduct(data);
-        else setError(data.error || "Failed to fetch product");
-      } catch {
+        if (res.ok && data.shippingAddresses) {
+          setSavedAddresses(data.shippingAddresses);
+
+          // If user has addresses and form is empty, auto-fill with default
+          if (data.shippingAddresses.length > 0 && !formData.firstName) {
+            const defaultAddr = data.shippingAddresses.find((addr: ShippingAddress) => addr.isDefault) || data.shippingAddresses[0];
+            if (defaultAddr) {
+              setFormData({
+                firstName: defaultAddr.firstName || "",
+                lastName: defaultAddr.lastName || "",
+                email: defaultAddr.email || "",
+                phone: defaultAddr.phone || "",
+                address: defaultAddr.address || "",
+                city: defaultAddr.city || "",
+                state: defaultAddr.state || "",
+                zipCode: defaultAddr.zipCode || "",
+                country: defaultAddr.country || "Thailand"
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch saved addresses:", err);
+      }
+    };
+
+    fetchSavedAddresses();
+  }, [formData.firstName]); // Include formData.firstName to satisfy ESLint, but effect logic prevents unwanted re-runs
+
+  useEffect(() => {
+    async function fetchCart() {
+      // First try to fetch from cart if available
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const cartRes = await fetch("/api/buyer/cart", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const cartData = await cartRes.json();
+
+        if (cartRes.ok && cartData.cart?.items?.length > 0) {
+          // Use cart items
+          const cartItems = cartData.cart.items;
+          if (cartItems.length === 1) {
+            // Single item in cart - use that
+            const item = cartItems[0];
+            setProduct({
+              _id: item.productId._id,
+              name: item.productId.name || "Unknown Product",
+              description: item.productId.description || "",
+              price: item.productId.price || 0,
+              imageUrl: item.productId.imageUrl || "",
+              sellerId: item.productId.sellerId || "",
+            });
+            // Override quantity with cart quantity
+            const url = new URL(window.location.href);
+            url.searchParams.set('quantity', item.quantity.toString());
+            window.history.replaceState({}, '', url.toString());
+          } else {
+            // Multiple items - redirect to cart
+            router.push("/cart");
+            return;
+          }
+        } else if (productId) {
+          // Fallback to single product if no cart items
+          const res = await fetch(`/api/buyer/products/${productId}`);
+          const data = await res.json();
+          if (res.ok) setProduct(data.product);
+          else setError(data.error || "Failed to fetch product");
+        }
+      } catch (err) {
+        console.error("Checkout fetch error:", err);
         setError("Something went wrong.");
       } finally {
         setLoading(false);
       }
     }
-    fetchProduct();
-  }, [productId]);
+
+    fetchCart();
+  }, [productId, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -428,12 +526,39 @@ function CheckoutContent() {
     setProcessing(true);
 
     try {
+      // Save address to user's profile if it's a new address or first time
+      if (savedAddresses.length === 0) {
+        const addressPayload = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          country: formData.country,
+          isDefault: true,
+          label: "Home"
+        };
+
+        await fetch("/api/buyer/profile", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ shippingAddress: addressPayload })
+        });
+      }
+
       // Call server create-order route which validates cart or single product and creates PaymentIntent
-      const payload: { productId?: string; quantity?: number } = {};
+      const payload: { productId?: string; quantity?: number; shippingAddress?: any } = {};
       if (productId) {
         payload.productId = productId;
         payload.quantity = quantity;
       }
+      payload.shippingAddress = formData;
 
       const res = await fetch("/api/buyer/create-order", {
         method: "POST",
@@ -712,9 +837,19 @@ function CheckoutContent() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <MapPin size={24} className="text-blue-600" />
-                <h2 className="text-xl font-semibold text-gray-900">Shipping Address</h2>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <MapPin size={24} className="text-blue-600" />
+                  <h2 className="text-xl font-semibold text-gray-900">Shipping Address</h2>
+                </div>
+                {savedAddresses.length > 0 && (
+                  <button
+                    onClick={() => setShowAddressModal(true)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                  >
+                    Choose Address
+                  </button>
+                )}
               </div>
               
               <div className="space-y-4">
@@ -875,6 +1010,81 @@ function CheckoutContent() {
           </div>
         </div>
       </div>
+
+      {/* Address Selection Modal */}
+      {showAddressModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Choose Shipping Address</h3>
+                <button
+                  onClick={() => setShowAddressModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {savedAddresses.map((addr, index) => (
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition-colors"
+                    onClick={() => {
+                      setFormData({
+                        firstName: addr.firstName || "",
+                        lastName: addr.lastName || "",
+                        email: addr.email || "",
+                        phone: addr.phone || "",
+                        address: addr.address || "",
+                        city: addr.city || "",
+                        state: addr.state || "",
+                        zipCode: addr.zipCode || "",
+                        country: addr.country || "Thailand"
+                      });
+                      setShowAddressModal(false);
+                    }}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium text-gray-900">
+                            {addr.label || "Address"} {addr.isDefault ? "(Default)" : ""}
+                          </span>
+                          {addr.isDefault && (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <p>{addr.firstName} {addr.lastName}</p>
+                          <p>{addr.address}</p>
+                          <p>{addr.city}, {addr.state} {addr.zipCode}</p>
+                          <p>{addr.phone} • {addr.email}</p>
+                        </div>
+                      </div>
+                      <div className="text-blue-600">
+                        <MapPin size={20} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <button
+                    onClick={() => setShowAddressModal(false)}
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    + Add New Address
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {cancelModalOpen && (
         <CancelModal

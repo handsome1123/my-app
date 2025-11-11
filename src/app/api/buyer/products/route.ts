@@ -21,18 +21,36 @@ export async function GET(req: Request) {
 
     const [total, docs] = await Promise.all([
       Product.countDocuments(filter),
-      Product.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }),
+      Product.find(filter)
+        .select('name description price imageUrl stock sellerId status category condition isFeatured')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .lean(),
     ]);
 
-    // convert ObjectIds and ensure minimal fields
+    // convert ObjectIds and return full product data
     const products = docs.map((d) => ({
       _id: String(d._id),
       name: d.name,
       description: d.description,
       price: d.price,
-      stock: d.stock,
       imageUrl: d.imageUrl,
-      sellerId: d.sellerId,
+      stock: d.stock,
+      sellerId: String(d.sellerId),
+      status: d.status,
+      moderatedBy: d.moderatedBy,
+      moderatedAt: d.moderatedAt,
+      moderationReason: d.moderationReason,
+      rejectionReason: d.rejectionReason,
+      category: d.category,
+      condition: d.condition,
+      tags: d.tags,
+      isFeatured: d.isFeatured,
+      viewCount: d.viewCount,
+      createdAt: d.createdAt,
+      updatedAt: d.updatedAt,
+      __v: d.__v,
     }));
 
     return NextResponse.json({ products, total, page, limit });

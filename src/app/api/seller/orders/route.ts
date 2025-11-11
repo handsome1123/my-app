@@ -1,7 +1,9 @@
+import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Order } from "@/models/Order";
 import { verifyToken } from "@/lib/jwt";
+import { ObjectId } from "mongodb";
 
 interface DecodedToken {
   id: string;
@@ -24,17 +26,81 @@ export async function GET(req: Request) {
     if (decoded.role !== "seller")
       return NextResponse.json({ error: "Only sellers can view orders" }, { status: 403 });
 
-    const filter = { sellerId: decoded.id };
+    const sellerId = decoded.id;
+    const sellerObjectId = new ObjectId(sellerId);
 
-    // Find all orders where sellerId matches logged-in seller
-    const orders = await Order.find(filter)
-      .sort({ createdAt: -1 })
-      .populate("productId", "name price imageUrl")
-      .populate("buyerId", "name email");
+    // Use MongoDB aggregation to properly handle the items array structure
+    const { db } = await connectToDatabase();
+    const ordersCol = db.collection("orders");
 
-    const count = await Order.countDocuments(filter);
+    const orders = await ordersCol.aggregate([
+      { $match: { "items.sellerId": sellerObjectId } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "buyerId",
+          foreignField: "_id",
+          as: "buyerId"
+        }
+      },
+      { $unwind: { path: "$items", preserveNullAndEmptyArrays: true } },
+      { $match: { "items.sellerId": sellerObjectId } },
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.productId",
+          foreignField: "_id",
+          as: "productId"
+        }
+      },
+      { $unwind: { path: "$productId", preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: "$_id",
+          buyerId: { $first: "$buyerId" },
+          items: { $push: "$items" },
+          subtotal: { $first: "$subtotal" },
+          shipping: { $first: "$shipping" },
+          total: { $first: "$total" },
+          totalPrice: { $first: "$totalPrice" },
+          status: { $first: "$status" },
+          shippingAddress: { $first: "$shippingAddress" },
+          createdAt: { $first: "$createdAt" },
+          updatedAt: { $first: "$updatedAt" },
+          productId: { $first: "$productId" }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          buyerId: {
+            _id: { $arrayElemAt: ["$buyerId._id", 0] },
+            name: { $arrayElemAt: ["$buyerId.name", 0] },
+            email: { $arrayElemAt: ["$buyerId.email", 0] },
+            phone: { $arrayElemAt: ["$buyerId.phone", 0] },
+            address: { $arrayElemAt: ["$buyerId.address", 0] },
+            city: { $arrayElemAt: ["$buyerId.city", 0] },
+            state: { $arrayElemAt: ["$buyerId.state", 0] },
+            zipCode: { $arrayElemAt: ["$buyerId.zipCode", 0] }
+          },
+          productId: {
+            _id: "$productId._id",
+            name: "$productId.name",
+            price: "$productId.price"
+          },
+          quantity: { $arrayElemAt: ["$items.quantity", 0] },
+          totalPrice: { $ifNull: ["$totalPrice", "$total"] },
+          status: 1,
+          shippingAddress: 1,
+          createdAt: 1,
+          updatedAt: 1
+        }
+      },
+      { $match: { "productId._id": { $ne: null } } },
+      { $sort: { createdAt: -1 } }
+    ]).toArray();
 
-    return NextResponse.json({ success: true, count, orders }, { status: 200 });
+    return NextResponse.json({ success: true, count: orders.length, orders }, { status: 200 });
   } catch (error: unknown) {
     console.error("GET /api/seller/orders error:", error);
     return NextResponse.json(

@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import { 
-  DollarSign, 
-  Package, 
-  ShoppingCart, 
-  TrendingUp, 
+import {
+  DollarSign,
+  Package,
+  ShoppingCart,
+  TrendingUp,
   AlertTriangle,
   CheckCircle,
   Eye,
@@ -13,8 +13,19 @@ import {
   Users,
   ArrowUpRight,
   ArrowDownRight,
+  Activity,
+  BarChart3,
+  MessageSquare,
+  Trophy,
+  Settings,
+  Shield,
+  CreditCard,
+  UserCheck,
+  Clock,
+  Target
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface BankInfo {
   bankName: string;
@@ -37,7 +48,13 @@ interface DashboardStats {
   revenueChange: number;
   ordersChange: number;
   lowStockProducts: number;
-  totalUsers?: number; // <-- add this
+  totalUsers: number;
+  totalSellers: number;
+  activeUsers: number;
+  conversionRate: number;
+  avgOrderValue: number;
+  supportTickets: number;
+  pendingTickets: number;
 }
 
 interface RecentOrder {
@@ -50,99 +67,98 @@ interface RecentOrder {
 }
 
 export default function AdminDashboard() {
-  const [profile, setProfile] = useState<SellerProfile | null>(null);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [ , setRecentOrders] = useState<RecentOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const router = useRouter();
+   const [profile, setProfile] = useState<SellerProfile | null>(null);
+   const [stats, setStats] = useState<DashboardStats | null>(null);
+   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState("");
+   const [connected, setConnected] = useState(false);
+   const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      // setError("No authentication token found");
-      // setLoading(false);
-      // return;
       router.replace("/login");
+      return;
     }
 
-    const headers = { Authorization: `Bearer ${token}` };
+    // Initial data fetch (fallback)
+    const initialFetch = async () => {
+      const headers = { Authorization: `Bearer ${token}` };
 
-    // Fetch profile, products, and orders
-    const fetchProfile = fetch("/api/seller/profile", { headers });
-    const fetchUsers = fetch("/api/admin/users", { headers });
-    const fetchProducts = fetch("/api/admin/products", { headers });
-    const fetchOrders = fetch("/api/admin/orders", { headers });
-
-    Promise.all([fetchProfile, fetchUsers, fetchProducts, fetchOrders])
-      .then(async ([profileRes, usersRes, productsRes, ordersRes]) => {
-        // Profile
-        if (profileRes.ok) {
-          const profileData = await profileRes.json();
-          setProfile(profileData);
+      try {
+        const res = await fetch("/api/admin/realtime", { headers });
+        if (res.ok) {
+          const data = await res.json();
+          updateDashboardState(data);
         }
+      } catch (err) {
+        console.error("Initial fetch failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        // Products -> use totalProducts from API
-        let totalProducts = 0;
-        if (productsRes.ok) {
-          const productsData = await productsRes.json();
-          totalProducts = productsData.totalProducts || 0; // <-- use totalProducts
+    // Setup Server-Sent Events connection
+    const eventSource = new EventSource(`/api/admin/realtime`);
+
+    eventSource.onopen = () => {
+      console.log("Connected to realtime dashboard");
+      setConnected(true);
+    };
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.error) {
+          console.error("SSE error:", data.error);
+          return;
         }
+        updateDashboardState(data);
+      } catch (err) {
+        console.error("Failed to parse SSE data:", err);
+      }
+    };
 
-        // Users -> use totalUsers from API
-        let totalUsers = 0;
-        if (usersRes.ok) {
-          const usersData = await usersRes.json();
-          totalUsers = usersData.totalUsers || 0; // <-- use totalUsers
+    eventSource.onerror = (error) => {
+      console.error("SSE connection error:", error);
+      setConnected(false);
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        if (eventSource.readyState === EventSource.CLOSED) {
+          console.log("Attempting to reconnect SSE...");
+          // The EventSource will automatically try to reconnect
         }
+      }, 5000);
+    };
 
-        // Orders -> use count and recent orders
-        let totalOrders = 0;
-        let pendingOrders = 0;
-        let recentOrdersData: RecentOrder[] = [];
-        if (ordersRes.ok) {
-          const ordersData = await ordersRes.json();
-          totalOrders = ordersData.count || 0;
-          recentOrdersData = ordersData.orders || [];
-          
-          // Properly type each order
-          pendingOrders = (ordersData.orders as RecentOrder[] | undefined)?.filter(
-            (o) => o.status === "pending"
-          ).length || 0;
-        }
+    const updateDashboardState = (data: any) => {
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+      if (data.stats) {
+        setStats(data.stats);
+      }
+      if (data.recentOrders) {
+        setRecentOrders(data.recentOrders);
+      }
+      if (data.recentActivity) {
+        setRecentActivity(data.recentActivity);
+      }
+      if (loading) {
+        setLoading(false);
+      }
+    };
 
-        setStats((prev) => ({
-          totalRevenue: prev?.totalRevenue || 0, // keep previous or calculate later
-          totalProducts,
-          totalOrders,
-          totalUsers,
-          pendingOrders,
-          monthlyRevenue: prev?.monthlyRevenue || 0,
-          revenueChange: prev?.revenueChange || 0,
-          ordersChange: prev?.ordersChange || 0,
-          lowStockProducts: prev?.lowStockProducts || 0,
-        }));
+    // Initial fetch as backup
+    initialFetch();
 
-        setRecentOrders(recentOrdersData);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch dashboard data:", err);
-        setError("Failed to load dashboard data");
-        setStats({
-          totalRevenue: 0,
-          totalProducts: 0,
-          totalOrders: 0,
-          totalUsers: 0,
-          pendingOrders: 0,
-          monthlyRevenue: 0,
-          revenueChange: 0,
-          ordersChange: 0,
-          lowStockProducts: 0,
-        });
-        setRecentOrders([]);
-      })
-      .finally(() => setLoading(false));
-  }, [router]);
+    // Cleanup on unmount
+    return () => {
+      eventSource.close();
+    };
+  }, [router, loading]);
 
   // const getStatusBadge = (status: string) => {
   //   const badges = {
@@ -218,24 +234,37 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex gap-4 items-center">
-                <div className="text-right">
-                  <div className="text-sm text-blue-100">Monthly Revenue</div>
-                  <div className="text-2xl font-bold">{fmt(stats?.monthlyRevenue ?? 0)}</div>
-                  <div className="text-xs text-blue-200 mt-1">Compared to last month</div>
-                </div>
+               <div className="text-right">
+                 <div className="text-sm text-blue-100">Monthly Revenue</div>
+                 <div className="text-2xl font-bold">{fmt(stats?.monthlyRevenue ?? 0)}</div>
+                 <div className="text-xs text-blue-200 mt-1 flex items-center gap-2">
+                   Compared to last month
+                   {connected ? (
+                     <div className="flex items-center gap-1 text-green-300 text-xs">
+                       <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                       Live
+                     </div>
+                   ) : (
+                     <div className="flex items-center gap-1 text-yellow-300 text-xs">
+                       <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                       Offline
+                     </div>
+                   )}
+                 </div>
+               </div>
 
-                <div className="bg-white/10 px-4 py-3 rounded-xl backdrop-blur-sm">
-                  <div className="text-xs text-white/90">Account</div>
-                  <div className="font-medium mt-1">{profile.name}</div>
-                  <div className="text-xs text-white/80 mt-1">{profile.email}</div>
-                </div>
-              </div>
+               <div className="bg-white/10 px-4 py-3 rounded-xl backdrop-blur-sm">
+                 <div className="text-xs text-white/90">Account</div>
+                 <div className="font-medium mt-1">{profile.name}</div>
+                 <div className="text-xs text-white/80 mt-1">{profile.email}</div>
+               </div>
+             </div>
             </div>
           </div>
         </header>
 
-        {/* KPI grid */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Enhanced KPI grid */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-5 shadow-md hover:shadow-lg transition">
             <div className="flex items-center justify-between">
               <div>
@@ -275,12 +304,46 @@ export default function AdminDashboard() {
           <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-5 shadow-md hover:shadow-lg transition">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-500">Total Users</p>
-                <div className="text-2xl font-bold text-gray-900">{stats?.totalUsers ?? 0}</div>
-                <div className="mt-2 text-sm text-gray-500">Community size</div>
+                <p className="text-xs text-gray-500">Active Users</p>
+                <div className="text-2xl font-bold text-gray-900">{stats?.activeUsers ?? 0}</div>
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <span className="text-green-600">+12%</span>
+                  <span className="text-gray-400">vs last month</span>
+                </div>
               </div>
               <div className="bg-white p-3 rounded-full shadow">
                 <Users className="w-6 h-6 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-5 shadow-md hover:shadow-lg transition">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Conversion Rate</p>
+                <div className="text-2xl font-bold text-gray-900">{stats?.conversionRate ?? 0}%</div>
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <span className="text-green-600">+2.1%</span>
+                  <span className="text-gray-400">vs last month</span>
+                </div>
+              </div>
+              <div className="bg-white p-3 rounded-full shadow">
+                <Target className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-5 shadow-md hover:shadow-lg transition">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Support Tickets</p>
+                <div className="text-2xl font-bold text-gray-900">{stats?.supportTickets ?? 0}</div>
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <span className="text-orange-600">{stats?.pendingTickets ?? 0} pending</span>
+                </div>
+              </div>
+              <div className="bg-white p-3 rounded-full shadow">
+                <MessageSquare className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </div>
@@ -310,13 +373,72 @@ export default function AdminDashboard() {
               <div className="text-sm text-gray-500">Live stream of latest orders & payments</div>
             </div>
 
-            <div className="p-6 space-y-4">
-              {/* Convert previous recentOrders rendering into compact cards (if any) */}
-              {/* ...existing code for recent orders mapping replaced with compact card UI... */}
-              {/* Example placeholder: */}
-              <div className="grid gap-4">
-                {/* Keep logic unchanged: iterate recentOrders if present */}
-                {/* ...existing code... */}
+            <div className="p-6">
+              <div className="space-y-6">
+                {/* Recent Orders */}
+                {recentOrders.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <ShoppingCart className="w-5 h-5 text-blue-600" />
+                      Recent Orders
+                    </h3>
+                    <div className="space-y-3">
+                      {recentOrders.slice(0, 3).map((order, index) => (
+                        <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                              <Package className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">{order.customerName}</p>
+                              <p className="text-sm text-gray-600">Order #{order.id.slice(-8)}</p>
+                              <p className="text-xs text-gray-500">{order.date}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg text-blue-600">฿{order.amount.toLocaleString()}</p>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {order.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4">
+                      <Link
+                        href="/admin/orders"
+                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        View all orders <ArrowUpRight className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Activity */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-green-600" />
+                    Recent Activity
+                  </h3>
+                  <div className="space-y-3">
+                    {recentActivity.map((activity, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <Activity className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{activity.message}</p>
+                          <p className="text-sm text-gray-500">{activity.time}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -361,18 +483,71 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
               <div className="grid gap-3">
-                <button className="w-full flex items-center justify-between p-3 bg-white border rounded-lg hover:shadow transition">
+                <Link
+                  href="/admin/products"
+                  className="w-full flex items-center justify-between p-3 bg-white border rounded-lg hover:shadow transition group"
+                >
                   <div className="flex items-center gap-3">
                     <Plus className="w-4 h-4 text-blue-600" />
                     <span className="font-medium">Add Product</span>
                   </div>
-                  <ArrowUpRight className="w-4 h-4 text-gray-400" />
-                </button>
+                  <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
+                </Link>
 
-                <button className="w-full flex items-center justify-between p-3 bg-white border rounded-lg hover:shadow transition">
-                  <TrendingUp className="w-4 h-4 text-purple-600" />
-                  <span className="font-medium">Marketing</span>
-                </button>
+                <Link
+                  href="/admin/users"
+                  className="w-full flex items-center justify-between p-3 bg-white border rounded-lg hover:shadow transition group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Users className="w-4 h-4 text-green-600" />
+                    <span className="font-medium">Manage Users</span>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-green-600" />
+                </Link>
+
+                <Link
+                  href="/admin/orders"
+                  className="w-full flex items-center justify-between p-3 bg-white border rounded-lg hover:shadow transition group"
+                >
+                  <div className="flex items-center gap-3">
+                    <ShoppingCart className="w-4 h-4 text-purple-600" />
+                    <span className="font-medium">Process Orders</span>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600" />
+                </Link>
+
+                <Link
+                  href="/admin/support"
+                  className="w-full flex items-center justify-between p-3 bg-white border rounded-lg hover:shadow transition group"
+                >
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className="w-4 h-4 text-orange-600" />
+                    <span className="font-medium">Support Center</span>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-orange-600" />
+                </Link>
+
+                <Link
+                  href="/admin/analytics"
+                  className="w-full flex items-center justify-between p-3 bg-white border rounded-lg hover:shadow transition group"
+                >
+                  <div className="flex items-center gap-3">
+                    <BarChart3 className="w-4 h-4 text-indigo-600" />
+                    <span className="font-medium">Analytics</span>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-indigo-600" />
+                </Link>
+
+                <Link
+                  href="/admin/settings"
+                  className="w-full flex items-center justify-between p-3 bg-white border rounded-lg hover:shadow transition group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Settings className="w-4 h-4 text-gray-600" />
+                    <span className="font-medium">Settings</span>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                </Link>
               </div>
             </div>
           </aside>

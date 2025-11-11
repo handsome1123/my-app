@@ -32,7 +32,7 @@ interface Order {
   };
   quantity: number;
   totalPrice: number;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" | "completed";
   paymentSlipUrl?: string;
   shippingAddress: {
     firstName: string;
@@ -78,6 +78,13 @@ function getStatusConfig(status: string) {
         bgColor: "bg-green-100",
         textColor: "text-green-800"
       };
+    case "completed":
+      return {
+        icon: CheckCircle,
+        color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        bgColor: "bg-emerald-100",
+        textColor: "text-emerald-800"
+      };
     case "cancelled":
       return {
         icon: XCircle,
@@ -116,7 +123,7 @@ export default function BuyerOrdersPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        
+
         if (res.ok) {
           setOrders(data.orders || []); // Added fallback for orders
         } else {
@@ -134,7 +141,7 @@ export default function BuyerOrdersPage() {
   }, [router]);
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.productId.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = order.productId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -202,6 +209,7 @@ export default function BuyerOrdersPage() {
                 <option value="confirmed">Confirmed</option>
                 <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
+                <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
@@ -241,8 +249,8 @@ export default function BuyerOrdersPage() {
                       <div className="flex-shrink-0">
                         <div className="w-full lg:w-32 h-32 relative rounded-xl overflow-hidden bg-gray-100">
                           <Image
-                            src={order.productId.imageUrl || "/placeholder-product.jpg"}
-                            alt={order.productId.name}
+                            src={order.productId?.imageUrl || "/placeholder-product.jpg"}
+                            alt={order.productId?.name || "Unknown Product"}
                             className="w-full h-full object-cover"
                             width={128}
                             height={128}
@@ -260,7 +268,7 @@ export default function BuyerOrdersPage() {
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                           <div>
                             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                              {order.productId.name}
+                              {order.productId?.name || "Unknown Product"}
                             </h2>
                             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                               <span className="flex items-center gap-1">
@@ -292,26 +300,26 @@ export default function BuyerOrdersPage() {
                               Shipping Details
                             </h3>
                             <div className="space-y-2 text-sm">
-                              <div className="flex items-center gap-2">
-                                <User className="h-3 w-3 text-gray-500" />
-                                <span>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-3 w-3 text-gray-500" />
-                                <span>{order.shippingAddress.email}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-3 w-3 text-gray-500" />
-                                <span>{order.shippingAddress.phone}</span>
-                              </div>
-                              <div className="flex items-start gap-2">
-                                <MapPin className="h-3 w-3 text-gray-500 mt-0.5" />
-                                <span className="leading-relaxed">
-                                  {order.shippingAddress.address}<br />
-                                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
-                                </span>
-                              </div>
-                            </div>
+                             <div className="flex items-center gap-2">
+                               <User className="h-3 w-3 text-gray-500" />
+                               <span>{order.shippingAddress?.firstName || "N/A"} {order.shippingAddress?.lastName || ""}</span>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               <Mail className="h-3 w-3 text-gray-500" />
+                               <span>{order.shippingAddress?.email || "N/A"}</span>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               <Phone className="h-3 w-3 text-gray-500" />
+                               <span>{order.shippingAddress?.phone || "N/A"}</span>
+                             </div>
+                             <div className="flex items-start gap-2">
+                               <MapPin className="h-3 w-3 text-gray-500 mt-0.5" />
+                               <span className="leading-relaxed">
+                                 {order.shippingAddress?.address || "N/A"}<br />
+                                 {order.shippingAddress?.city || "N/A"}, {order.shippingAddress?.state || "N/A"} {order.shippingAddress?.zipCode || "N/A"}
+                               </span>
+                             </div>
+                           </div>
                           </div>
 
                           {/* Payment Information */}
@@ -341,6 +349,62 @@ export default function BuyerOrdersPage() {
                               <div className="flex items-center gap-2 text-sm text-amber-700">
                                 <Clock className="h-4 w-4" />
                                 <span>Awaiting payment confirmation</span>
+                              </div>
+                            )}
+
+                            {/* Confirm Receipt Button */}
+                            {order.status === "delivered" && (
+                              <div className="mt-4 pt-4 border-t border-gray-200">
+                                <button
+                                  onClick={async () => {
+                                    const token = localStorage.getItem("token");
+                                    if (!token) {
+                                      alert("Please login to confirm receipt");
+                                      return;
+                                    }
+
+                                    if (confirm("Are you sure you want to confirm receipt of this order? This will complete the order and trigger payout to the seller.")) {
+                                      try {
+                                        const res = await fetch(`/api/buyer/orders/confirm`, {
+                                          method: "POST",
+                                          headers: {
+                                            "Content-Type": "application/json",
+                                            "Authorization": `Bearer ${token}`
+                                          },
+                                          body: JSON.stringify({ orderId: order._id })
+                                        });
+
+                                        const data = await res.json();
+                                        if (res.ok) {
+                                          alert("Receipt confirmed! The order is now complete.");
+                                          window.location.reload(); // Refresh to show updated status
+                                        } else {
+                                          alert(data.error || "Failed to confirm receipt");
+                                        }
+                                      } catch (err) {
+                                        console.error("Confirm receipt error:", err);
+                                        alert("Error confirming receipt");
+                                      }
+                                    }
+                                  }}
+                                  className="w-full px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  Confirm Receipt
+                                </button>
+                                <p className="text-xs text-gray-500 mt-2 text-center">
+                                  Confirm when you receive the product to complete the order
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Completed Status */}
+                            {order.status === "completed" && (
+                              <div className="mt-4 pt-4 border-t border-gray-200">
+                                <div className="flex items-center justify-center gap-2 text-sm text-emerald-700">
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>Order completed successfully</span>
+                                </div>
                               </div>
                             )}
                           </div>

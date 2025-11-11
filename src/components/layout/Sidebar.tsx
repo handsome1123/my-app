@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { 
-  Menu, 
-  X, 
+import {
+  Menu,
+  X,
   LayoutDashboard,
   Users,
   Package,
@@ -16,7 +16,12 @@ import {
   Home,
   User,
   ChevronDown,
-  // Settings,
+  DollarSign,
+  BarChart3,
+  TrendingUp,
+  MessageSquare,
+  Wallet,
+  Settings,
   // LogOut,
   // Bell
 } from 'lucide-react';
@@ -78,14 +83,18 @@ export default function Sidebar({ role = 'buyer', userName = 'User', userAvatar 
       { href: '/admin/users', label: 'Users', icon: Users, badge: 12 },
       { href: '/admin/products', label: 'Products', icon: Package },
       { href: '/admin/orders', label: 'Orders', icon: ClipboardList, badge: 5 },
+      { href: '/admin/payouts', label: 'Payouts', icon: DollarSign, badge: 8 },
       { href: '/admin/refunds', label: 'Refunds', icon: RefreshCcw, badge: 2 },
     ],
     seller: [
       { href: '/seller/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/seller/orders', label: 'Orders', icon: ClipboardList },
       { href: '/seller/products', label: 'Products', icon: Package },
-      { href: '/seller/my-orders', label: 'My Orders', icon: ClipboardList, badge: 8 },
-      { href: '/seller/sales-orders', label: 'Sale Orders', icon: ClipboardList },
+      { href: '/seller/analytics', label: 'Analytics', icon: BarChart3 },
+      { href: '/seller/earnings', label: 'Earnings', icon: Wallet },
+      { href: '/seller/messages', label: 'Messages', icon: MessageSquare },
       { href: '/seller/payments', label: 'Payments', icon: CreditCard },
+      { href: '/seller/settings', label: 'Settings', icon: Settings },
     ],
     buyer: [
       { href: '/', label: 'Home', icon: Home },
@@ -253,10 +262,19 @@ export default function Sidebar({ role = 'buyer', userName = 'User', userAvatar 
             <LogoutButton />
           </nav>
 
-          {/* Footer */}
+          {/* Footer with Stats */}
           <div className="p-4 border-t border-gray-100">
+            {role === 'seller' && (
+              <div className="mb-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                <div className="text-center">
+                  <p className="text-xs text-blue-600 font-medium mb-1">Professional Seller Tools</p>
+                  <p className="text-xs text-blue-500">Advanced analytics, bulk operations, and real-time insights</p>
+                </div>
+              </div>
+            )}
             <div className="text-center text-xs text-gray-400">
               <p>© 2025 MFU 2ndhand</p>
+              <p className="mt-1">Professional E-commerce Platform</p>
             </div>
           </div>
       </aside>

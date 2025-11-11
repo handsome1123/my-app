@@ -15,6 +15,21 @@ const UserSchema = new Schema(
     verificationTokenExpires: { type: Date },
     notificationsCount: { type: Number, default: 0 },
     unreadNotifications: { type: Number, default: 0 },
+    // Shipping addresses for returning customers
+    shippingAddresses: [{
+      firstName: { type: String },
+      lastName: { type: String },
+      email: { type: String },
+      phone: { type: String },
+      address: { type: String },
+      city: { type: String },
+      state: { type: String },
+      zipCode: { type: String },
+      country: { type: String, default: "Thailand" },
+      isDefault: { type: Boolean, default: false },
+      label: { type: String, default: "Home" }, // Home, Work, etc.
+      createdAt: { type: Date, default: Date.now }
+    }],
   },
   { timestamps: true }
 );

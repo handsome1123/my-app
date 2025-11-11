@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, Truck } from "lucide-react";
+import Link from "next/link";
 
 interface Order {
   _id: string;
@@ -60,7 +61,8 @@ export default function BuyerOrderDetailPage() {
         if (!mounted) return;
         if (res.ok) setOrder(data.order);
         else setError(data.error || "Failed to load order");
-      } catch (_err) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        console.error(err);
         if (mounted) setError("Unable to load order");
       } finally {
         if (mounted) setLoading(false);
@@ -190,18 +192,28 @@ export default function BuyerOrderDetailPage() {
             </div>
 
             <div className="bg-white p-4 rounded shadow-sm">
-              <h4 className="text-sm font-medium mb-2">Action</h4>
-              {order.status !== "completed" ? (
-                <button
-                  onClick={handleConfirmReceived}
-                  disabled={confirming}
-                  className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60"
+              <h4 className="text-sm font-medium mb-2">Actions</h4>
+              <div className="space-y-2">
+                <Link
+                  href={`/buyer/orders/${id}/tracking`}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                 >
-                  {confirming ? "Confirming..." : "Confirm Received"}
-                </button>
-              ) : (
-                <div className="text-sm text-gray-600">You have confirmed receipt.</div>
-              )}
+                  <Truck className="w-4 h-4" />
+                  Track Order
+                </Link>
+
+                {order.status !== "completed" ? (
+                  <button
+                    onClick={handleConfirmReceived}
+                    disabled={confirming}
+                    className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60"
+                  >
+                    {confirming ? "Confirming..." : "Confirm Received"}
+                  </button>
+                ) : (
+                  <div className="text-sm text-gray-600">You have confirmed receipt.</div>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     if (!buyerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { productId, quantity } = body || {};
+    const { productId, quantity, shippingAddress } = body || {};
 
     const { db } = await connectToDatabase();
     const productsCol = db.collection("products");
@@ -87,9 +87,12 @@ export async function POST(req: Request) {
       total: subtotal,
       currency: "THB",
       status: "pending_payment",
+      shippingAddress: shippingAddress || null, // Include shipping address
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+
+    console.log("Creating order with shipping address:", shippingAddress);
     const insertRes = await ordersCol.insertOne(orderDoc);
     const orderId = insertRes.insertedId;
 

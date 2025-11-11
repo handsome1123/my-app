@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import LogoutButton from "@/components/LogoutButton";
 import { useUser } from "@/context/UserContext";
 import { Menu, Bell, Search as IconSearch, ChevronDown, Users, CreditCard, FileText } from "lucide-react";
@@ -31,9 +31,13 @@ const navLinks: Record<NonNullable<User["role"]>, { href: string; label: string 
   ],
   seller: [
     { href: "/seller/dashboard", label: "Dashboard" },
-    { href: "/seller/products", label: "My Products" },
     { href: "/seller/orders", label: "Orders" },
+    { href: "/seller/products", label: "Products" },
+    { href: "/seller/analytics", label: "Analytics" },
+    { href: "/seller/earnings", label: "Earnings" },
+    { href: "/seller/messages", label: "Messages" },
     { href: "/seller/payments", label: "Payments" },
+    { href: "/seller/settings", label: "Settings" },
   ],
   admin: [
     { href: "/admin/dashboard", label: "Dashboard" },
@@ -52,6 +56,13 @@ export default function Navbar() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
+
+  // Memoize computed values to prevent unnecessary re-renders
+  const userRole = useMemo(() => user?.role, [user?.role]);
+  const userEmail = useMemo(() => user?.email, [user?.email]);
+  const notifCount = useMemo(() => Number(user?.notificationsCount ?? user?.unreadNotifications ?? 0), [user?.notificationsCount, user?.unreadNotifications]);
+  const initials = useMemo(() => user?.name ? user.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() : "U", [user?.name]);
+  const userLinks = useMemo(() => userRole ? navLinks[userRole as NonNullable<User["role"]>].filter((link) => !(link.href === "/become-seller" && userRole === "seller")) : [], [userRole]);
 
   const mobileCloseRef = useRef<HTMLButtonElement | null>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
@@ -134,19 +145,7 @@ export default function Navbar() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // derive userLinks
-  const userLinks =
-    user?.role
-      ? navLinks[user.role as NonNullable<User["role"]>].filter(
-          (link) => !(link.href === "/become-seller" && user.role === "seller")
-        )
-      : [];
-
-  const notifCount = Number(user?.notificationsCount ?? user?.unreadNotifications ?? 0);
-
-  const initials = user?.name
-    ? user.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
-    : "U";
+  // These are now memoized above, remove duplicates
 
   return (
     <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-100 shadow-sm" role="navigation" aria-label="Primary Navigation">
@@ -172,6 +171,7 @@ export default function Navbar() {
                 placeholder="Search products, categories, sellers..."
                 className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label="Search products"
+                suppressHydrationWarning
               />
             </div>
           </div>
@@ -267,7 +267,7 @@ export default function Navbar() {
                           initials
                         )}
                       </div>
-                      <span className="hidden sm:inline-block text-sm text-gray-700">{user.email}</span>
+                      <span className="hidden sm:inline-block text-sm text-gray-700">{userEmail}</span>
                       <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showProfileMenu ? "rotate-180" : ""}`} />
                     </button>
 

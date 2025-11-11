@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search as IconSearch, ShoppingCart as IconCart, RefreshCcw } from "lucide-react";
+import { Search as IconSearch, ShoppingCart as IconCart, RefreshCcw, Heart, Filter } from "lucide-react";
 
 interface BankInfo {
   bankName: string;
@@ -30,8 +30,32 @@ interface Product {
     name: string;
     email?: string;
   };
+  inWishlist?: boolean;
+  averageRating?: number;
+  createdAt?: string;
 }
 
+interface WishlistProduct {
+  _id: string;
+  name: string;
+  description?: string;
+  price: number;
+  imageUrl?: string;
+  stock: number;
+  sellerId?: {
+    _id: string;
+    name: string;
+    email?: string;
+  };
+}
+
+interface Profile {
+  name: string;
+  email: string;
+  isVerified: boolean;
+  bankInfo?: BankInfo;
+  wishlist?: WishlistProduct[];
+}
 export default function BuyerHome() {
 	const [profile, setProfile] = useState<Profile | null>(null);
 	const [profileLoading, setProfileLoading] = useState(true); // { changed code }
@@ -40,9 +64,16 @@ export default function BuyerHome() {
 	const [error, setError] = useState<string | null>(null);
 	const router = useRouter();
 
-	// New: search + pagination local state
+	// Memoize profile name to avoid unnecessary re-renders
+	const profileName = useMemo(() => profile?.name || "Guest", [profile?.name]);
+
+	// New: search + pagination + filtering local state
 	const [search, setSearch] = useState("");
 	const [visibleCount, setVisibleCount] = useState(12);
+	const [sortBy, setSortBy] = useState("newest");
+	const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+	const [minRating, setMinRating] = useState(0);
+	const [showFilters, setShowFilters] = useState(false);
 	const searchRef = useRef<number | null>(null);
 
 	// Fetch user profile (buyer) with proper loading handling
@@ -78,7 +109,7 @@ export default function BuyerHome() {
 			setError(null);
 
 			const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-			const url = q ? `/api/buyer/products?search=${encodeURIComponent(q)}` : "/api/buyer/products";
+			const url = q ? `/api/buyer/products?search=${encodeURIComponent(q)}&limit=50` : "/api/buyer/products?limit=50";
 
 			const res = await fetch(url, {
 				headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -93,15 +124,15 @@ export default function BuyerHome() {
 				setError(data.error || "Failed to fetch products");
 			}
 		} catch (err: unknown) {
-  if (err instanceof Error) {
-    if (err.name !== "AbortError") {
-      console.error("Fetch error:", err);
-      setError("Error fetching products");
-    }
-  } else {
-    console.error("Fetch error (unknown):", err);
-    setError("Error fetching products");
-  }
+	 if (err instanceof Error) {
+	   if (err.name !== "AbortError") {
+	     console.error("Fetch error:", err);
+	     setError("Error fetching products");
+	   }
+	 } else {
+	   console.error("Fetch error (unknown):", err);
+	   setError("Error fetching products");
+	 }
 		} finally {
 			setLoadingProducts(false);
 		}
@@ -124,16 +155,48 @@ export default function BuyerHome() {
 		return () => { if (searchRef.current) window.clearTimeout(searchRef.current); };
 	}, [search, fetchProducts]);
 
-	// client-side filtered list + memoized slice for visible items
+	// client-side filtered list + sorting + memoized slice for visible items
 	const filteredProducts = useMemo(() => {
+		let filtered = products;
+
+		// Text search
 		const q = search.trim().toLowerCase();
-		if (!q) return products;
-		return products.filter((p) =>
-			p.name.toLowerCase().includes(q) ||
-			(p.description || "").toLowerCase().includes(q) ||
-			p.sellerId?.name?.toLowerCase().includes(q)
+		if (q) {
+			filtered = filtered.filter((p) =>
+				p.name.toLowerCase().includes(q) ||
+				(p.description || "").toLowerCase().includes(q) ||
+				p.sellerId?.name?.toLowerCase().includes(q)
+			);
+		}
+
+		// Price range filter
+		filtered = filtered.filter((p) =>
+			p.price >= priceRange[0] && p.price <= priceRange[1]
 		);
-	}, [products, search]);
+
+		// Minimum rating filter (if available)
+		if (minRating > 0) {
+			// Assuming we'll add rating data to products later
+			filtered = filtered.filter((p) => (p.averageRating || 0) >= minRating);
+		}
+
+		// Sorting
+		filtered.sort((a, b) => {
+			switch (sortBy) {
+				case "price-low":
+					return a.price - b.price;
+				case "price-high":
+					return b.price - a.price;
+				case "rating":
+					return (b.averageRating || 0) - (a.averageRating || 0);
+				case "newest":
+				default:
+					return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+			}
+		});
+
+		return filtered;
+	}, [products, priceRange, minRating, sortBy, search]); // Added search back as it's still used in client-side filtering
 
 	const displayed = useMemo(() => filteredProducts.slice(0, visibleCount), [filteredProducts, visibleCount]);
 	const hasMore = filteredProducts.length > visibleCount;
@@ -156,16 +219,49 @@ export default function BuyerHome() {
 			});
 			const data = await res.json();
 			if (res.ok) {
-				// lightweight feedback
-				alert("Added to cart");
+				// lightweight feedback - use toast/snackbar instead of alert for better UX
+				console.log("Added to cart");
 			} else {
-				alert(data.error || "Failed to add to cart");
+				console.error(data.error || "Failed to add to cart");
 			}
 		} catch (err) {
 			console.error("Add to cart error:", err);
-			alert("Error adding to cart");
 		} finally {
 			setAddingToCartId(null);
+		}
+	}, [router]);
+
+	// Wishlist handler
+	const [updatingWishlistId, setUpdatingWishlistId] = useState<string | null>(null);
+	const toggleWishlist = useCallback(async (productId: string) => {
+		const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+		if (!token) {
+			alert("Please login to manage wishlist.");
+			router.push("/login");
+			return;
+		}
+		setUpdatingWishlistId(productId);
+		try {
+			const res = await fetch("/api/buyer/wishlist", {
+				method: "POST",
+				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+				body: JSON.stringify({ productId }),
+			});
+			const data = await res.json();
+			if (res.ok) {
+				// Update the product's inWishlist status locally
+				setProducts(prev => prev.map(p =>
+					p._id === productId ? { ...p, inWishlist: data.action === 'added' } : p
+				));
+				console.log(data.action === 'added' ? "Added to wishlist" : "Removed from wishlist");
+			} else {
+				console.error(data.error || "Failed to update wishlist");
+			}
+		} catch (err) {
+			console.error("Wishlist error:", err);
+			alert("Error updating wishlist");
+		} finally {
+			setUpdatingWishlistId(null);
 		}
 	}, [router]);
 
@@ -192,7 +288,7 @@ export default function BuyerHome() {
 					<div className="flex flex-col md:flex-row items-center justify-between gap-6">
 						<div className="space-y-2">
 							<h1 className="text-4xl font-bold">
-								Welcome back, {profile?.name} 👋
+								Welcome back, {profileName} 👋
 							</h1>
 							<p className="text-blue-100">Discover amazing products curated just for you</p>
 						</div>
@@ -243,27 +339,119 @@ export default function BuyerHome() {
 			</div>
 
 			<div className="max-w-7xl mx-auto px-4 py-8">
-				{/* Search + refresh */}
-				<div className="flex items-center gap-4 mb-6">
-					<div className="relative flex-1 max-w-lg">
-						<IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-						<input
-							type="search"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder="Search products, seller..."
-							aria-label="Search products"
-							className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-						/>
+				{/* Search + filters */}
+				<div className="flex flex-col gap-4 mb-6">
+					<div className="flex items-center gap-4">
+						<div className="relative flex-1 max-w-lg">
+							<IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+							<input
+								type="search"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder="Search products, seller..."
+								aria-label="Search products"
+								className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+							/>
+						</div>
+
+						<button
+							onClick={() => setShowFilters(!showFilters)}
+							className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+								showFilters
+									? 'bg-blue-600 text-white'
+									: 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+							}`}
+						>
+							<Filter className="w-4 h-4" /> Filters
+						</button>
+
+						<button
+							onClick={() => fetchProducts()}
+							className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
+							aria-label="Refresh products"
+						>
+							<RefreshCcw className="w-4 h-4" /> Refresh
+						</button>
 					</div>
 
-					<button
-						onClick={() => fetchProducts()}
-						className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
-						aria-label="Refresh products"
-					>
-						<RefreshCcw className="w-4 h-4" /> Refresh
-					</button>
+					{/* Filters Panel */}
+					{showFilters && (
+						<div className="bg-white border rounded-lg p-4 shadow-sm">
+							<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+								{/* Sort By */}
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+									<select
+										value={sortBy}
+										onChange={(e) => setSortBy(e.target.value)}
+										className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+									>
+										<option value="newest">Newest</option>
+										<option value="price-low">Price: Low to High</option>
+										<option value="price-high">Price: High to Low</option>
+										<option value="rating">Rating</option>
+									</select>
+								</div>
+
+								{/* Price Range */}
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Price Range: ฿{priceRange[0]} - ฿{priceRange[1]}
+									</label>
+									<div className="px-2">
+										<input
+											type="range"
+											min="0"
+											max="10000"
+											step="100"
+											value={priceRange[0]}
+											onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+											className="w-full"
+										/>
+										<input
+											type="range"
+											min="0"
+											max="10000"
+											step="100"
+											value={priceRange[1]}
+											onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+											className="w-full mt-2"
+										/>
+									</div>
+								</div>
+
+								{/* Minimum Rating */}
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">Min Rating</label>
+									<select
+										value={minRating}
+										onChange={(e) => setMinRating(parseInt(e.target.value))}
+										className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+									>
+										<option value="0">Any Rating</option>
+										<option value="3">3+ Stars</option>
+										<option value="4">4+ Stars</option>
+										<option value="5">5 Stars</option>
+									</select>
+								</div>
+
+								{/* Clear Filters */}
+								<div className="flex items-end">
+									<button
+										onClick={() => {
+											setSortBy("newest");
+											setPriceRange([0, 10000]);
+											setMinRating(0);
+											setSearch("");
+										}}
+										className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
+									>
+										Clear Filters
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
 				</div>
 
 				{/* live region for results count */}
@@ -325,6 +513,18 @@ export default function BuyerHome() {
 											</div>
 
 											<div className="flex items-center gap-2">
+												<button
+													onClick={() => toggleWishlist(product._id)}
+													disabled={updatingWishlistId === product._id}
+													className={`p-2 rounded-full transition-colors ${
+														product.inWishlist
+															? 'text-red-600 hover:text-red-700 bg-red-50'
+															: 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+													}`}
+													aria-label={product.inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+												>
+													<Heart className={`w-4 h-4 ${product.inWishlist ? 'fill-current' : ''}`} />
+												</button>
 												<button
 													onClick={() => addToCart(product._id)}
 													disabled={addingToCartId === product._id}

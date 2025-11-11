@@ -12,6 +12,7 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const status = url.searchParams.get("status") || "pending";
+    const includeRetrying = url.searchParams.get("includeRetrying") === "true";
 
     const auth = req.headers.get("authorization") || "";
     if (!auth.startsWith("Bearer ")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -26,7 +27,19 @@ export async function GET(req: Request) {
     if (!admin || admin.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const payoutsCol = db.collection("payouts");
-    const cursor = payoutsCol.find({ status }).sort({ createdAt: -1 }).limit(500);
+
+    // Build query to include retrying payouts if requested
+    const query: any = {};
+    if (includeRetrying && status === "pending") {
+      query.$or = [
+        { status: "pending" },
+        { status: "retrying" }
+      ];
+    } else {
+      query.status = status;
+    }
+
+    const cursor = payoutsCol.find(query).sort({ createdAt: -1 }).limit(500);
     const docs = await cursor.toArray();
 
     // convert ObjectId to string for client

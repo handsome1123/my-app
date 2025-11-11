@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const payoutsCol = db.collection("payouts");
     const payout = await payoutsCol.findOne({ _id: new ObjectId(payoutId) });
     if (!payout) return NextResponse.json({ error: "Payout not found" }, { status: 404 });
-    if (payout.status !== "pending") return NextResponse.json({ error: "Payout already processed" }, { status: 400 });
+    if (payout.status !== "pending" && payout.status !== "retrying") return NextResponse.json({ error: "Payout already processed" }, { status: 400 });
 
     // fetch seller info
     const seller = await usersCol.findOne({ _id: new ObjectId(payout.sellerId) });
@@ -79,6 +79,12 @@ export async function POST(req: Request) {
             processedBy: new ObjectId(adminUserId),
             processedAt: new Date(),
           },
+          $unset: {
+            lastError: "",
+            lastErrorAt: "",
+            retryCount: "",
+            nextRetryAt: "",
+          },
         }
       );
 
@@ -94,21 +100,40 @@ export async function POST(req: Request) {
     } catch (stripeErr) {
       console.error("Stripe transfer failed:", stripeErr);
       const message = stripeErr instanceof Stripe.errors.StripeError ? stripeErr.message : "Stripe transfer failed";
+      const currentRetryCount = payout.retryCount || 0;
+      const maxRetries = 3;
+      const shouldRetry = currentRetryCount < maxRetries;
 
-      // store failure reason and keep payout pending or mark failed
-      await payoutsCol.updateOne(
-        { _id: payout._id },
-        {
-          $set: {
-            lastError: message,
-            lastErrorAt: new Date(),
-            status: "failed",
-            processedBy: new ObjectId(adminUserId),
-          },
-        }
-      );
+      const updateData: any = {
+        lastError: message,
+        lastErrorAt: new Date(),
+        processedBy: new ObjectId(adminUserId),
+        $inc: { retryCount: 1 },
+      };
 
-      return NextResponse.json({ error: "Payment provider error", details: message }, { status: 500 });
+      if (shouldRetry) {
+        // Mark for retry (exponential backoff: 1h, 4h, 12h)
+        const retryDelays = [1, 4, 12]; // hours
+        const delayHours = retryDelays[currentRetryCount] || 24;
+        const nextRetryAt = new Date(Date.now() + delayHours * 60 * 60 * 1000);
+
+        updateData.status = "retrying";
+        updateData.nextRetryAt = nextRetryAt;
+
+        console.info(`Payout ${payoutId} failed, will retry at ${nextRetryAt.toISOString()}`);
+      } else {
+        // Max retries reached, mark as failed
+        updateData.status = "failed";
+        console.error(`Payout ${payoutId} permanently failed after ${maxRetries} retries`);
+      }
+
+      await payoutsCol.updateOne({ _id: payout._id }, { $set: updateData });
+
+      const responseMessage = shouldRetry ?
+        `Payment provider error (will retry)` :
+        `Payment provider error (max retries exceeded)`;
+
+      return NextResponse.json({ error: responseMessage, details: message }, { status: 500 });
     }
   } catch (err) {
     console.error("process payout error:", err);

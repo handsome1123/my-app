@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { ObjectId } from "mongodb";
 import { connectToDatabase } from "@/lib/mongodb";
+import { commissionService } from "@/lib/commission";
 
 // Initialize Stripe with the latest stable API version
 const stripeSecret = process.env.STRIPE_SECRET_KEY || "";
@@ -127,12 +128,9 @@ export async function POST(req: Request) {
           bySeller.set(sellerId, prev);
         }
 
-        const commissionPercent = Number(process.env.COMMISSION_PERCENT ?? 10);
-
         for (const [sellerId, summary] of bySeller.entries()) {
           const gross = Math.round(summary.gross * 100) / 100;
-          const commission = Math.round((gross * commissionPercent) / 100 * 100) / 100;
-          const netAmount = Math.round((gross - commission) * 100) / 100;
+          const { commission, netAmount } = commissionService.calculate(gross);
 
           const existingPayout = await payoutsCol.findOne({
             orderId: orderId,

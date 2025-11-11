@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { OAuth2Client } from "google-auth-library";
-import { connectToMongoDB } from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import { signToken } from "@/lib/jwt";
 
@@ -8,7 +8,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export async function POST(req: Request) {
   try {
-    await connectToMongoDB();
+    await connectToDatabase();
     const { idToken } = await req.json();
 
     // Verify Google token
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         name,
         email,
         password: undefined, // ✅ no password for Google
-        role: "buyer", // default role
+        role: "buyer", // default role - can be upgraded later via profile or admin
         provider: "google",
       });
     }
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     // Generate JWT
     const token = signToken({ id: user._id, role: user.role });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       token,
       user: {
         name: user.name,
@@ -50,6 +50,16 @@ export async function POST(req: Request) {
         role: user.role,
       },
     });
+
+    // Set the cookie for middleware
+    response.cookies.set('sb-access-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return response;
   } catch (error: unknown) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }

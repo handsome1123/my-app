@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { ShoppingCart, Trash2 } from "lucide-react";
 
 type CartItem = {
   productId: {
@@ -56,7 +57,10 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
-        <h1 className="text-xl font-semibold mb-4">Your Cart</h1>
+        <div className="flex items-center gap-3 mb-6">
+          <ShoppingCart className="h-6 w-6 text-blue-600" />
+          <h1 className="text-2xl font-bold text-gray-900">Your Cart</h1>
+        </div>
 
         {loading ? (
           <div>Loading...</div>
@@ -97,7 +101,11 @@ export default function CartPage() {
                         >
                           +
                         </button>
-                        <button onClick={() => removeItem(it.productId._id)} className="ml-4 text-sm text-red-600">
+                        <button
+                          onClick={() => removeItem(it.productId._id)}
+                          className="ml-4 text-sm text-red-600 hover:text-red-800 flex items-center gap-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
                           Remove
                         </button>
                       </div>
@@ -107,19 +115,23 @@ export default function CartPage() {
               })}
             </div>
 
-            <div className="mt-6 flex items-center justify-between">
-              <div className="text-lg font-semibold">Subtotal: ฿{subtotal.toFixed(2)}</div>
-              <div>
-                <button
-                  onClick={() =>
-                    router.push(
-                      `/buyer/checkout?productId=${cart!.items[0]?.productId._id}&quantity=${cart!.items[0]?.quantity}`
-                    )
-                  }
-                  className="px-4 py-2 bg-green-600 text-white rounded"
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50 p-6 rounded-lg">
+              <div className="text-xl font-bold text-gray-900">
+                Subtotal: <span className="text-blue-600">฿{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex gap-4">
+                <Link
+                  href="/buyer/dashboard"
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                 >
-                  Checkout (sample)
-                </button>
+                  Continue Shopping
+                </Link>
+                <Link
+                  href="/buyer/checkout"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  Proceed to Checkout
+                </Link>
               </div>
             </div>
           </>

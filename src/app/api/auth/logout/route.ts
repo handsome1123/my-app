@@ -12,5 +12,15 @@ export async function POST() {
     maxAge: 0, // expires immediately
   });
 
+  // Also clear the sb-access-token cookie used by middleware
+  response.cookies.set({
+    name: "sb-access-token",
+    value: "",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0, // expires immediately
+  });
+
   return response;
 }

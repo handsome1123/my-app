@@ -29,6 +29,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import jwt from "jsonwebtoken";
 import Stripe from "stripe";
 import { ObjectId, Db } from "mongodb";
+import { commissionService } from "@/lib/commission";
 
 interface Order {
     _id: ObjectId;
@@ -376,12 +377,10 @@ async function simulateSuccessfulPayment(db: Db, orderId: string) {
   // Create payout records
   const order = await db.collection("orders").findOne({ _id: new ObjectId(orderId) });
   if (order?.items) {
-    const commissionPercent = 10;
     for (const item of order.items) {
       if (!item.sellerId) continue;
       const gross = item.price * item.quantity;
-      const commission = Math.round((gross * commissionPercent) / 100 * 100) / 100;
-      const netAmount = Math.round((gross - commission) * 100) / 100;
+      const { commission, netAmount } = commissionService.calculate(gross);
 
       await db.collection("payouts").insertOne({
         orderId: new ObjectId(orderId),

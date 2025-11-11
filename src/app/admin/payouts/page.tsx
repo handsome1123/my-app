@@ -35,7 +35,7 @@ export default function AdminPayoutsPage() {
     setError(null);
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      const res = await fetch(`/api/admin/payouts?status=pending`, {
+      const res = await fetch(`/api/admin/payouts?status=pending&includeRetrying=true`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = await res.json();
@@ -107,6 +107,12 @@ export default function AdminPayoutsPage() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Pending Payouts</h1>
           <div className="flex items-center gap-3">
+            <Link href="/admin/payouts/analytics" className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              Analytics
+            </Link>
+            <Link href="/admin/payouts/history" className="px-3 py-2 bg-white border rounded shadow-sm hover:bg-gray-50">
+              History
+            </Link>
             <button
               onClick={() => fetchPayouts()}
               className="px-3 py-2 bg-white border rounded shadow-sm hover:bg-gray-50"

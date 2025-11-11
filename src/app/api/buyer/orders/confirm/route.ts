@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { connectToDatabase } from "@/lib/mongodb";
+import { commissionService } from "@/lib/commission";
 
 /*
   POST body: { orderId: string }
@@ -33,17 +34,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    console.log(`Confirming receipt for order ${orderId} by buyer ${buyerId}`);
+
     // Update order status to 'completed'
     await ordersCol.updateOne(
       { _id: order._id },
       { $set: { status: "completed", completedAt: new Date() } }
     );
 
-    // Create payout request
-    const commissionPercent = Number(process.env.COMMISSION_PERCENT ?? 10);
+    console.log(`Order ${orderId} marked as completed`);
+
+    // Create payout request using centralized commission service
     const gross = Number(order.total ?? order.totalPrice ?? 0);
-    const commission = Math.round((gross * commissionPercent) * 100) / 100 / 100; // calculate commission properly
-    const netAmount = Math.round((gross - commission) * 100) / 100;
+    const { commission, netAmount } = commissionService.calculate(gross);
 
     const payoutsCol = db.collection("payouts");
     const insertRes = await payoutsCol.insertOne({
@@ -56,6 +59,8 @@ export async function POST(req: Request) {
       status: "pending",
       createdAt: new Date(),
     });
+
+    console.log(`Payout request created for seller ${order.sellerId}, amount: ${netAmount}`);
 
     return NextResponse.json({ ok: true, payoutId: insertRes.insertedId.toString() });
   } catch (err) {

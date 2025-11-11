@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     // Generate token
     const token = signToken({ id: user._id, role: user.role });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       token,
       user: {
         name: user.name,
@@ -33,6 +33,16 @@ export async function POST(req: Request) {
         role: user.role,
       },
     });
+
+    // Set the cookie for middleware
+    response.cookies.set('sb-access-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return response;
   } catch (error: unknown) {
     // Type-safe error handling
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
